@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desktop - One to One</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            background: #1a1a2e;
+            color: white;
+        }
+
+        #info {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 10;
+        }
+
+        #url {
+            font-size: 0.8rem;
+            word-break: break-all;
+            opacity: 0.7;
+            margin-bottom: 0.5rem;
+        }
+
+        #qr {
+            margin-top: 0.5rem;
+        }
+
+        .cursor {
+            position: absolute;
+            width: 1rem;
+            height: 1rem;
+            margin-left: -0.5rem;
+            margin-top: -0.5rem;
+            background: red;
+            border-radius: 50%;
+            transition: top 0.1s, left 0.1s;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="info">
+        <h2>Desktop</h2>
+        <p>Scan de QR code met je telefoon om te verbinden:</p>
+        <div id="qr"></div>
+        <p id="url"></p>
+    </div>
+
+    <div class="cursor" id="cursor"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const $cursor = document.getElementById('cursor');
+        const $url = document.getElementById('url');
+        const $qr = document.getElementById('qr');
+
+        let socket;
+
+        const init = () => {
+            socket = io.connect('/');
+
+            socket.on('connect', () => {
+                console.log(`Connected: ${socket.id}`);
+
+                // Bouw de controller URL met het socket ID
+                const url = `${new URL(`/controller.html?id=${socket.id}`, window.location)}`;
+                $url.textContent = url;
+
+                // Genereer QR code
+                const typeNumber = 4;
+                const errorCorrectionLevel = 'L';
+                const qr = qrcode(typeNumber, errorCorrectionLevel);
+                qr.addData(url);
+                qr.make();
+                $qr.innerHTML = qr.createImgTag(4);
+            });
+
+            // Luister naar update events van de controller
+            socket.on('update', (data) => {
+                $cursor.style.left = `${data.x * window.innerWidth}px`;
+                $cursor.style.top = `${data.y * window.innerHeight}px`;
+            });
+        };
+
+        init();
+    </script>
+</body>
+
+</html>

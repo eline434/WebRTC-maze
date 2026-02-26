@@ -1,0 +1,1 @@
+Als eerste heb ik de demo voor de qr-code ingevoegd

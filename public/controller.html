@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controller</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            background: #16213e;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            touch-action: none;
+        }
+
+        #status {
+            text-align: center;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="status">
+        <h2>Controller</h2>
+        <p id="info">Verbinden...</p>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const $info = document.getElementById('info');
+
+        let socket, targetSocketId;
+
+        const getUrlParameter = name => {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            const results = regex.exec(location.search);
+            return results === null ? false : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        };
+
+        const init = () => {
+            targetSocketId = getUrlParameter('id');
+            if (!targetSocketId) {
+                alert('Missing target ID in querystring');
+                $info.textContent = 'Geen target ID gevonden in de URL.';
+                return;
+            }
+
+            socket = io.connect('/');
+
+            socket.on('connect', () => {
+                console.log(`Connected: ${socket.id}`);
+                $info.textContent = 'Verbonden! Beweeg je vinger over het scherm.';
+            });
+
+            // Muis (voor testen op desktop)
+            window.addEventListener('mousemove', e => {
+                if (socket && socket.connected) {
+                    socket.emit('update', targetSocketId, {
+                        x: e.clientX / window.innerWidth,
+                        y: e.clientY / window.innerHeight
+                    });
+                }
+            });
+
+            // Touch (voor smartphone)
+            window.addEventListener('touchmove', e => {
+                e.preventDefault();
+                if (socket && socket.connected) {
+                    socket.emit('update', targetSocketId, {
+                        x: e.touches[0].clientX / window.innerWidth,
+                        y: e.touches[0].clientY / window.innerHeight
+                    });
+                }
+            }, { passive: false });
+        };
+
+        init();
+    </script>
+</body>
+
+</html>
