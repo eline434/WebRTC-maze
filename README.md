@@ -5,3 +5,9 @@ Als eerste heb ik de demo voor de qr-code ingevoegd
 - link direct naar IP-address
 - video door geven van gsm naar computer
 - start knop —> die timer weergeeft
+
+Ik heb simple peer via de terminal geinstaleert
+```bash
+ npm install simple-peer
+ ```
+
