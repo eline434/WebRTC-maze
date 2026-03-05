@@ -1,17 +1,18 @@
 {
-    "name": "oef4",
-    "version": "1.0.0",
-    "description": "One-to-one websocket controller with QR code",
-    "main": "index.js",
-    "scripts": {
-        "start": "node index.js"
-    },
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
-    "dependencies": {
-        "express": "^5.2.1",
-        "simple-peer": "^9.11.1",
-        "socket.io": "^4.8.3"
-    }
+  "name": "test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "fs": "^0.0.1-security",
+    "socket.io": "^4.8.3"
+  }
 }
