@@ -484,3 +484,13 @@ $otherCamera.addEventListener('click', () => {
   $otherCamera.play();
 });
 ```
+
+Als laatste heb ik nog index.html verwijderd omdat het niet meer nodig was.
+
+
+# eerste spel
+
+Ik wil een doolhof als eerste spel. Online zocht ik op hoe ik het best maakte en kwam zo deze tegen:
+https://www.geeksforgeeks.org/javascript/navigating-the-labyrinth-a-maze-generator-game-using-html-css-javascript/
+
+Dit heb ik in mijn receiver gestoken.
