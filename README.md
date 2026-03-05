@@ -490,7 +490,22 @@ Als laatste heb ik nog index.html verwijderd omdat het niet meer nodig was.
 
 # eerste spel
 
-Ik wil een doolhof als eerste spel. Online zocht ik op hoe ik het best maakte en kwam zo deze tegen:
-https://www.geeksforgeeks.org/javascript/navigating-the-labyrinth-a-maze-generator-game-using-html-css-javascript/
+## Eerste spel: Doolhof
 
-Dit heb ik in mijn receiver gestoken.
+Als eerste spel wil ik een doolhof maken. Online heb ik opgezocht hoe je dit het beste aanpakt en kwam ik deze tutorial tegen:
+[Navigating the Labyrinth: A Maze Generator Game using HTML, CSS & JavaScript (GeeksforGeeks)](https://www.geeksforgeeks.org/javascript/navigating-the-labyrinth-a-maze-generator-game-using-html-css-javascript/)
+
+Ik heb de code in mijn receiver-pagina geïntegreerd en ben nu bezig om de onnodige delen te verwijderen. Op dit moment ben ik vooral bezig met CSS te vewijderen.
+
+
+## 📅 Planning
+
+| Taak                         | Uitleg                                                                                                           |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Doolhofspel werkend krijgen  | De lijn die gevolgd wordt verwijderen en zorgen dat je altijd alle kanten op kan (overtollige code verwijderen). |
+| Peer list verwijderen        | Directe verbinding laten maken tussen sender en receiver.                                                        |
+| Knoppen doorgeven via sender | De knoppen (inputs) doorgeven via de sender, net zoals de video wordt doorgegeven.                               |
+| Extra spel: gsm schudden     | Een spel toevoegen waarbij je de gsm moet schudden om te snijden.                                                |
+| Randomizer                   | Bij het starten van de app wordt willekeurig een spel gekozen.                                                   |
+| Uitleg voor elk spel         | Een korte tekst die verschijnt voordat het spel begint, die je kan overslaan met de pijltjestoets.               |
+
