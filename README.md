@@ -506,3 +506,27 @@ Als eerste spel wil ik een doolhof maken. Online heb ik opgezocht hoe je dit het
 [Navigating the Labyrinth: A Maze Generator Game using HTML, CSS & JavaScript (GeeksforGeeks)](https://www.geeksforgeeks.org/javascript/navigating-the-labyrinth-a-maze-generator-game-using-html-css-javascript/)
 
 Ik heb de code in mijn receiver-pagina geïntegreerd en ben nu bezig om de onnodige delen te verwijderen. Op dit moment ben ik vooral bezig met CSS te vewijderen.
+
+
+# week 3
+
+Ik heb de demo voor de simple peer in de index.js volledig gezet en dan aan ai gevraagd om dat door te trekken naar de index.html en sender.html.
+
+```javascript
+zou je dit kunnen laten werken via simple peer, dus mijn index en sender?
+```
+
+Now I have a clear picture. I'll convert the project from raw RTCPeerConnection to simple-peer. This simplifies signaling — instead of separate offer/answer/ice events, simple-peer uses a single "signal" event.
+
+Let me update all three files:
+
+Now update sender.html to use simple-peer:
+
+Edited
+sender.html+32-64
+Also remove the now-unnecessary peer select dropdown from sender.html:
+
+Now update the WebRTC part in index.html (receiver) to use simple-peer:
+
+Let me verify the final state of all files:
+
