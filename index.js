@@ -1,54 +1,45 @@
-require('dotenv').config();
-const express = require('express')
-const app = express()
-const port = 3000
-
-const isDevelopment = (process.env.NODE_ENV === 'development');
-
+const express = require('express');
+const app = express();
 const fs = require('fs');
-
-let options = {};
-if (isDevelopment) {
-    options = {
-        key: fs.readFileSync('./localhost.key'),
-        cert: fs.readFileSync('./localhost.crt')
-    };
-}
-
-const server = require(isDevelopment ? 'https' : 'http').Server(options, app);
-
-app.use(express.static('public'))
-server.listen(port, () => {
-    console.log(`App listening on port ${port}`)
-})
-
-const { Server } = require("socket.io");
+const os = require('os');
+const options = {
+    key: fs.readFileSync('./localhost.key'),
+    cert: fs.readFileSync('./localhost.crt')
+};
+const server = require('https').createServer(options, app);
+const { Server } = require('socket.io');
 const io = new Server(server);
+const port = 3000;
 
-const clients = {};
+// Geen caching tijdens development
+app.use((req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
+});
+app.use(express.static('public'));
+
 io.on('connection', socket => {
-    clients[socket.id] = { id: socket.id };
+    console.log(`Connection: ${socket.id}`);
+
+    // simple-peer: één 'signal' event vervangt offer/answer/ice
+    socket.on('signal', (peerId, signalData) => {
+        console.log(`Received signal from ${socket.id} to ${peerId}`);
+        io.to(peerId).emit('signal', socket.id, signalData);
+    });
 
     socket.on('disconnect', () => {
-        delete clients[socket.id];
-        io.emit('clients', clients);
+        console.log(`Disconnected: ${socket.id}`);
     });
+});
 
-    socket.on('peerOffer', (peerId, offer) => {
-        console.log(`Received peerOffer from ${socket.id} to ${peerId}`);
-        io.to(peerId).emit('peerOffer', peerId, offer, socket.id);
-    });
-
-    socket.on('peerAnswer', (peerId, answer) => {
-        console.log(`Received peerAnswer from ${socket.id} to ${peerId}`);
-        io.to(peerId).emit('peerAnswer', peerId, answer, socket.id);
-    });
-
-    socket.on('peerIce', (peerId, candidate) => {
-        console.log(`Received peerIce from ${socket.id} to ${peerId}`);
-        io.to(peerId).emit('peerIce', peerId, candidate, socket.id);
-    });
-
-    io.emit('clients', clients);
-
+server.listen(port, () => {
+    const networkInterfaces = os.networkInterfaces();
+    for (const interfaceName in networkInterfaces) {
+        for (const iface of networkInterfaces[interfaceName]) {
+            if (iface.family === 'IPv4' && !iface.internal) {
+                console.log(`https://${iface.address}:${port}`);
+            }
+        }
+    }
+    console.log(`App listening on https://localhost:${port}`);
 });
