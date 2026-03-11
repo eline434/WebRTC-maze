@@ -18,7 +18,7 @@
     <video id="myCamera" playsinline autoplay muted></video>
     <label for="peerSelect">Peer: </label><select id="peerSelect"></select>
 
-    <script src="https://192.168.10.56:3000/socket.io/socket.io.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <script type="module">
 
         const $myCamera = document.getElementById('myCamera');
@@ -34,11 +34,18 @@
             }]
         };
 
+        let targetSocketId;
+
         const init = async () => {
-            initSocket();
+            targetSocketId = getUrlParameter('id');
+            if (!targetSocketId) {
+                alert(`Missing target ID in querystring`);
+                return;
+            }
             const constraints = { audio: false, video: { width: 1280, height: 720 } };
             myStream = await navigator.mediaDevices.getUserMedia(constraints);
             $myCamera.srcObject = myStream;
+            initSocket();
             $peerSelect.addEventListener('input', callSelectedPeer);
         };
 
@@ -90,10 +97,18 @@
             await peerConnection.addIceCandidate(candidate);
         };
 
+        const getUrlParameter = name => {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            const results = regex.exec(location.search);
+            return results === null ? false : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        };
+
         const initSocket = () => {
-            socket = io.connect(`https://192.168.10.56:3000`);
+            socket = io.connect(`/`);
             socket.on('connect', () => {
                 console.log(socket.id);
+                callPeer(targetSocketId);
             });
             socket.on('clients', updatePeerList);
             socket.on('peerIce', async (myId, candidate, peerId) => {

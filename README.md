@@ -487,17 +487,6 @@ $otherCamera.addEventListener('click', () => {
 
 Als laatste heb ik nog index.html verwijderd omdat het niet meer nodig was.
 
-
-# eerste spel
-
-## Eerste spel: Doolhof
-
-Als eerste spel wil ik een doolhof maken. Online heb ik opgezocht hoe je dit het beste aanpakt en kwam ik deze tutorial tegen:
-[Navigating the Labyrinth: A Maze Generator Game using HTML, CSS & JavaScript (GeeksforGeeks)](https://www.geeksforgeeks.org/javascript/navigating-the-labyrinth-a-maze-generator-game-using-html-css-javascript/)
-
-Ik heb de code in mijn receiver-pagina geïntegreerd en ben nu bezig om de onnodige delen te verwijderen. Op dit moment ben ik vooral bezig met CSS te vewijderen.
-
-
 ## 📅 Planning
 
 | Taak                         | Uitleg                                                                                                           |
@@ -509,3 +498,11 @@ Ik heb de code in mijn receiver-pagina geïntegreerd en ben nu bezig om de onnod
 | Randomizer                   | Bij het starten van de app wordt willekeurig een spel gekozen.                                                   |
 | Uitleg voor elk spel         | Een korte tekst die verschijnt voordat het spel begint, die je kan overslaan met de pijltjestoets.               |
 
+
+
+# eerste spel
+
+Als eerste spel wil ik een doolhof maken. Online heb ik opgezocht hoe je dit het beste aanpakt en kwam ik deze tutorial tegen:
+[Navigating the Labyrinth: A Maze Generator Game using HTML, CSS & JavaScript (GeeksforGeeks)](https://www.geeksforgeeks.org/javascript/navigating-the-labyrinth-a-maze-generator-game-using-html-css-javascript/)
+
+Ik heb de code in mijn receiver-pagina geïntegreerd en ben nu bezig om de onnodige delen te verwijderen. Op dit moment ben ik vooral bezig met CSS te vewijderen.

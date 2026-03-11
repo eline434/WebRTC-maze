@@ -59,115 +59,18 @@
                 left: 50%;
                 transform: translateX(-50%);
             }
-
-            .background li {
-                width: 15px;
-                height: 15px;
-            }
-
-        }
-
-        @media screen and (max-width: 360px) {
-            body {
-                flex-direction: column;
-            }
-
-            #mazeCanvas {
-                width: 70%;
-                margin-left: -130px;
-
-            }
-        }
-
-        @media screen and (max-width: 328px) {
-            body {
-                flex-direction: column;
-            }
-
-            #mazeCanvas {
-                width: 70%;
-                margin-left: -120px;
-
-            }
-        }
-
-        @media screen and (max-width: 278px) {
-            body {
-                flex-direction: column;
-            }
-
-            #mazeCanvas {
-                width: 70%;
-                margin-left: -100px;
-
-            }
-
-        }
-
-        @media screen and (max-width: 580px) {
-            body {
-                flex-direction: column;
-            }
-
-            #mazeCanvas {
-                width: 70%;
-                margin-left: -165px;
-            }
-        }
-
-        @media screen and (max-width: 400px) {
-            body {
-                flex-direction: column;
-            }
-
-            #mazeCanvas {
-                width: 70%;
-                margin-left: -130px;
-            }
-
-            .msgbox {
-                width: 50%;
-                height: 35%;
-            }
-        }
-
-        @media screen and (max-width: 280px) {
-            body {
-                flex-direction: column;
-            }
-
-            #mazeCanvas {
-                width: 70%;
-                margin-left: -100px;
-            }
-
-            .msgbox {
-                width: 40%;
-                height: 38%;
-            }
-
-            .msgbox button {
-                padding: 5px 10px;
-            }
         }
     </style>
     <h1>Receiver</h1>
     <div id="qr"></div>
 
     <div class="menubar">
-        <h2 style="color:rgb(70, 50, 52);
-                font-family: 'Lucida Sans', 
-                             'Lucida Sans Regular', 
-                             'Lucida Grande', 
-                             'Lucida Sans Unicode', 
-                             Geneva, Verdana, sans-serif;">
-            <u>Navigate the Labyrinth</u>
         </h2>
         <button class="startbtn">Start</button>
         <button id="btnUp">Up</button>
         <button id="btnDown">Down</button>
-        <button id="btnRight">Right</button>
         <button id="btnLeft">Left</button>
+        <button id="btnRight">Right</button>
     </div>
     <div class="content">
         <div class="msgbox"></div>
@@ -198,6 +101,15 @@
             socket = io.connect(`/`);
             socket.on(`connect`, () => {
                 console.log(socket.id);
+                const url = `${new URL(`/sender.html?id=${socket.id}`, window.location)}`;
+                console.log(url);   
+
+                const typeNumber = 4;
+                const errorCorrectionLevel = 'L';
+                const qr = qrcode(typeNumber, errorCorrectionLevel);
+                qr.addData(url);
+                qr.make();
+                document.getElementById('qr').innerHTML = qr.createImgTag(4);
             });
 
             socket.on('peerOffer', (myId, offer, peerId) => {
@@ -229,8 +141,6 @@
             const answer = await peerConnection.createAnswer();
             await peerConnection.setLocalDescription(answer);
             socket.emit(`peerAnswer`, peerId, answer);
-
-
         };
 
         const handlePeerIce = async (myId, candidate, peerId) => {
@@ -239,13 +149,6 @@
             }
             await peerConnection.addIceCandidate(candidate);
         };
-
-        const typeNumber = 4;
-        const errorCorrectionLevel = 'L';
-        const qr = qrcode(typeNumber, errorCorrectionLevel);
-        qr.addData('https://192.168.10.56:3000/sender.html');
-        qr.make();
-        document.getElementById('qr').innerHTML = qr.createImgTag(4);
 
         const canvas =
             document.getElementById('mazeCanvas');
@@ -280,32 +183,24 @@
             color: 'blue',
         };
 
-        document.querySelector('.startbtn').
-            addEventListener('click', function () {
-                resetPlayerPos();
-                clearScreen();
-                setup();
-                draw();
-                addListener();
-                displayHidden();
+        const $startButton = document.querySelector('.startbtn');
+
+        $startButton.addEventListener('click', function () {
+            resetPlayerPos();
+            clearScreen();
+            setup();
+            draw();
+            addListener();
+            displayHidden();
+        });
+
+        document.addEventListener('DOMContentLoaded',
+            function () {
+
             });
 
-        document.
-            addEventListener('DOMContentLoaded',
-                function () {
-                    const startButton =
-                        document.querySelector('.startbtn');
-                    function stopBlinking() {
-                        startButton.classList.remove("blink");
-                    }
-                    startButton.classList.add("blink");
-                    startButton.
-                        addEventListener("click", stopBlinking);
-                });
-
         function addListener() {
-            document.
-                addEventListener('keydown', handleKeyPress);
+            document.addEventListener('keydown', handleKeyPress);
         }
 
         document.getElementById('btnUp').
