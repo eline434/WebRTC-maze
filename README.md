@@ -1161,5 +1161,51 @@ tumblr_onsimhGBbN1rgyab2o1_1280.png?1773311149149:1  Failed to load resource: ne
     at HTMLInputElement.onclick 
 ```
 
+--> dit werkte weer niet, heb dan aan ai gevraagd om van nul de maze te maken.
 
+promt:
+```javascript
+Can you create a maze where the maze is displayed in index.html and the controls/arrows are routed through the sender? The maze is randomly generated when the sender is connected to the other sender via RTC. The video can be omitted entirely. Everything must be done via the peer connection (RTC).
+```
 
+responce:
+Now I have a clear picture. I'll build the whole thing:
+
+index.html (receiver): displays the maze, shows QR code for sender to connect
+sender.html: has arrow controls (buttons + keyboard), sends directions over the WebRTC data channel
+No video at all — pure data channel via simple-peer
+Maze is generated when the peer connects
+Let me create all the files:
+
+Now rewrite the two HTML files. The new index.html from the terminal context is the target structure:
+
+Edited
+index.html+44-10
+Now I need to remove the old inline script that's left over:
+
+I see — the old script block ended up after the </html> tag. Let me remove it:
+
+Now rewrite sender.html — arrow buttons + keyboard, data channel only, no video:
+
+Let me verify the final state of all files:
+
+Everything is set up. Here's how it works:
+
+Architecture
+Page	Role
+index.html	Receiver — displays the maze + QR code. Waits for the sender to connect.
+sender.html	Controller — shows arrow buttons (+ keyboard support). Sends moves over WebRTC data channel.
+Flow
+Open https://localhost:3000 → shows a QR code + "Waiting for sender…"
+Scan the QR (or open the link on another device/tab) → sender connects via simple-peer data channel only (no video/audio)
+As soon as the peer connection establishes, a random maze is generated on the receiver
+The sender presses arrows (buttons or keyboard) → { type: "move", direction: "ArrowUp" } is sent over peer.send() → receiver calls movePlayer() to update the maze
+Reaching the bottom-right corner shows a victory overlay with move count
+Files created/changed
+style.css — styling for both pages
+maze.js — maze generation, rendering, player movement
+connection.js — receiver-side simple-peer + Socket.IO signalling
+sender.html — controller with arrow buttons + data channel
+index.html — clean receiver page
+index.js — server unchanged (already had the simple signal relay)
+Run npm start and open https://localhost:3000 to try it.
