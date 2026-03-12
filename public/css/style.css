@@ -166,9 +166,19 @@ body {
 }
 
 @keyframes pop {
-    0%   { transform: scale(0.5); opacity: 0; }
-    70%  { transform: scale(1.08); }
-    100% { transform: scale(1); opacity: 1; }
+    0% {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+
+    70% {
+        transform: scale(1.08);
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 /* ── Sender (sender.html) ── */
@@ -219,10 +229,21 @@ body {
     transform: scale(0.93);
 }
 
-#btnUp    { grid-area: up; }
-#btnLeft  { grid-area: left; }
-#btnRight { grid-area: right; }
-#btnDown  { grid-area: down; }
+#btnUp {
+    grid-area: up;
+}
+
+#btnLeft {
+    grid-area: left;
+}
+
+#btnRight {
+    grid-area: right;
+}
+
+#btnDown {
+    grid-area: down;
+}
 
 @media (max-width: 500px) {
     .arrow-grid button {
