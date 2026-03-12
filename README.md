@@ -1209,3 +1209,13 @@ sender.html — controller with arrow buttons + data channel
 index.html — clean receiver page
 index.js — server unchanged (already had the simple signal relay)
 Run npm start and open https://localhost:3000 to try it.
+
+
+
+
+promt:
+```javascript
+Can you make it so that when you complete the maze, it restarts and makes it a bit more difficult? After three levels, you'll get the time it took. You'll then have the option to restart. After completing it a second time, you'll get your best time and the time for that round.
+```
+
+output
