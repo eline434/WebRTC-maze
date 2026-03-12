@@ -4,26 +4,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Webcam</title>
+    <title>Maze Receiver</title>
+    <link rel="stylesheet" href="/css/style.css">
 </head>
 
 <body>
-    <video id="video" autoplay playsinline></video>
-    <script>
-        const $video = document.getElementById('video');
+    <div id="page">
+        <!-- Victory overlay -->
+        <div id="Message-Container">
+            <div id="message">
+                <h1>Congratulations!</h1>
+                <p>You solved the maze!</p>
+                <p id="moves"></p>
+                <input id="okBtn" type="button" onclick="toggleVisablity('Message-Container')" value="Play Again" />
+            </div>
+        </div>
 
-        const init = async () => {
-            const constraints = {
-                audio: false,
-                video: true
-            };
-            const stream = await navigator.mediaDevices.getUserMedia(constraints);
-            $video.srcObject = stream;
-        };
+        <!-- Menu -->
+        <div id="menu">
+            <div class="custom-select">
+                <select id="diffSelect">
+                    <option value="10">Easy</option>
+                    <option value="15">Medium</option>
+                    <option value="25">Hard</option>
+                    <option value="38">Extreme</option>
+                </select>
+            </div>
+            <input id="startMazeBtn" type="button" onclick="makeMaze()" value="New Maze" />
+        </div>
 
-        init();
-    </script>
+        <!-- Status -->
+        <p id="status">Connecting…</p>
+
+        <!-- QR code -->
+        <div id="qr"></div>
+
+        <!-- Maze -->
+        <div id="mazeContainer">
+            <canvas id="mazeCanvas" height="600" width="600"></canvas>
+        </div>
+    </div>
+
+    <!-- Dependencies -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/simple-peer@9/simplepeer.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+
+    <!-- App scripts -->
+    <script src="/js/maze.js"></script>
+    <script src="/js/connection.js"></script>
 </body>
 
 </html>

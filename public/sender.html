@@ -3,112 +3,124 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebRTC</title>
-    <style>
-        video {
-            max-width: 100%;
-            height: auto;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Maze Controller</title>
+    <link rel="stylesheet" href="/css/style.css">
 </head>
 
 <body>
-    <h1>Sender</h1>
-    <video id="myCamera" playsinline autoplay muted></video>
-    <label for="peerSelect">Peer: </label><select id="peerSelect"></select>
+    <div id="sender-page">
+        <h1>Controller</h1>
+        <p id="sender-status">Connecting…</p>
 
-    <script src="https://192.168.10.56:3000/socket.io/socket.io.js"></script>
-    <script type="module">
+        <div class="arrow-grid">
+            <button id="btnUp">&#9650;</button>
+            <button id="btnLeft">&#9664;</button>
+            <button id="btnRight">&#9654;</button>
+            <button id="btnDown">&#9660;</button>
+        </div>
+    </div>
 
-        const $myCamera = document.getElementById('myCamera');
-        const $peerSelect = document.getElementById('peerSelect');
+    <!-- Dependencies -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/simple-peer@9/simplepeer.min.js"></script>
 
+    <script>
+        const $status = document.getElementById('sender-status');
         let socket;
-        let myStream;
-        let peerConnection;
+        let peer;
+        let connected = false;
 
-        const servers = {
-            iceServers: [{
-                urls: 'stun:stun.l.google.com:19302'
-            }]
-        };
+        /* ── Send a direction over the data channel ── */
+        function sendMove(direction) {
+            if (!peer || !connected) return;
+            peer.send(JSON.stringify({ type: 'move', direction }));
+        }
 
-        const init = async () => {
-            initSocket();
-            const constraints = { audio: false, video: { width: 1280, height: 720 } };
-            myStream = await navigator.mediaDevices.getUserMedia(constraints);
-            $myCamera.srcObject = myStream;
-            $peerSelect.addEventListener('input', callSelectedPeer);
-        };
+        /* ── Button controls ── */
+        document.getElementById('btnUp').addEventListener('click', () => sendMove('ArrowUp'));
+        document.getElementById('btnDown').addEventListener('click', () => sendMove('ArrowDown'));
+        document.getElementById('btnLeft').addEventListener('click', () => sendMove('ArrowLeft'));
+        document.getElementById('btnRight').addEventListener('click', () => sendMove('ArrowRight'));
 
-        const callPeer = async (peerId) => {
-            peerConnection = new RTCPeerConnection(servers);
+        /* ── Keyboard controls ── */
+        document.addEventListener('keydown', e => {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault();
+                sendMove(e.key);
 
-            peerConnection.onicecandidate = (e) => {
-                console.log('ice candidate', e.candidate);
-                socket.emit('peerIce', peerId, e.candidate);
-            };
-
-            // add the video stream
-            for (const track of myStream.getTracks()) {
-                peerConnection.addTrack(track, myStream);
-            }
-
-            const offer = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offer);
-            socket.emit('peerOffer', peerId, offer);
-        };
-
-        const callSelectedPeer = () => {
-            console.log('call selected peer', $peerSelect.value);
-            callPeer($peerSelect.value);
-        };
-
-        const updatePeerList = (clients) => {
-            $peerSelect.innerHTML = '<option value="none">--- Select Peer To Call ---</option>';
-            for (const clientId in clients) {
-                const isMyOwnId = (clientId === socket.id);
-                if (clients.hasOwnProperty(clientId) && !isMyOwnId) {
-                    const client = clients[clientId];
-                    const $option = document.createElement('option');
-                    $option.value = clientId;
-                    $option.textContent = clientId;
-                    $peerSelect.appendChild($option);
+                // Visual feedback on the matching button
+                const btnMap = { ArrowUp: 'btnUp', ArrowDown: 'btnDown', ArrowLeft: 'btnLeft', ArrowRight: 'btnRight' };
+                const btn = document.getElementById(btnMap[e.key]);
+                if (btn) {
+                    btn.classList.add('active');
+                    setTimeout(() => btn.classList.remove('active'), 120);
                 }
             }
-        };
+        });
 
-        const handlePeerAnswer = async (myId, answer, peerId) => {
-            await peerConnection.setRemoteDescription(answer);
-        };
+        /* ── Touch feedback for buttons ── */
+        document.querySelectorAll('.arrow-grid button').forEach(btn => {
+            btn.addEventListener('touchstart', e => { e.preventDefault(); btn.click(); }, { passive: false });
+        });
 
-        const handlePeerIce = async (myId, candidate, peerId) => {
-            if (!candidate) {
+        /* ── Read target id from query string ── */
+        function getUrlParameter(name) {
+            const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            const results = regex.exec(location.search);
+            return results === null ? false : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        }
+
+        /* ── Boot ── */
+        (function init() {
+            const targetSocketId = getUrlParameter('id');
+            if (!targetSocketId) {
+                $status.textContent = 'Missing target ID in URL.';
                 return;
             }
-            await peerConnection.addIceCandidate(candidate);
-        };
 
-        const initSocket = () => {
-            socket = io.connect(`https://192.168.10.56:3000`);
+            socket = io.connect('/');
+
             socket.on('connect', () => {
-                console.log(socket.id);
-            });
-            socket.on('clients', updatePeerList);
-            socket.on('peerIce', async (myId, candidate, peerId) => {
-                console.log(`Received peerIce from ${peerId}`, candidate);
-                await handlePeerIce(myId, candidate, peerId);
-            });
-            socket.on('peerAnswer', async (myId, answer, peerId) => {
-                console.log('Received peerAnswer from ${peerId}');
-                console.log(answer);
-                await handlePeerAnswer(myId, answer, peerId);
-            });
-        };
+                console.log('Socket connected:', socket.id);
+                $status.textContent = 'Signalling…';
 
-        init();
+                // Create initiator peer – data only, no streams
+                peer = new SimplePeer({
+                    initiator: true,
+                    trickle: true,
+                    config: {
+                        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                    }
+                });
 
+                peer.on('signal', signalData => {
+                    socket.emit('signal', targetSocketId, signalData);
+                });
+
+                peer.on('connect', () => {
+                    console.log('Peer connected!');
+                    connected = true;
+                    $status.textContent = 'Connected! Use the arrows to move.';
+                });
+
+                peer.on('error', err => {
+                    console.error('Peer error:', err);
+                    $status.textContent = 'Connection error – reload to retry.';
+                });
+
+                peer.on('close', () => {
+                    connected = false;
+                    $status.textContent = 'Disconnected.';
+                });
+            });
+
+            // Relay signals from receiver
+            socket.on('signal', (fromId, signalData) => {
+                console.log('Received signal from', fromId);
+                if (peer) peer.signal(signalData);
+            });
+        })();
     </script>
 </body>
 

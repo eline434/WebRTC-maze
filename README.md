@@ -484,3 +484,682 @@ $otherCamera.addEventListener('click', () => {
   $otherCamera.play();
 });
 ```
+
+Als laatste heb ik nog index.html verwijderd omdat het niet meer nodig was.
+
+## 📅 Planning
+
+| Taak                         | Uitleg                                                                                                           |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Doolhofspel werkend krijgen  | De lijn die gevolgd wordt verwijderen en zorgen dat je altijd alle kanten op kan (overtollige code verwijderen). |
+| Peer list verwijderen        | Directe verbinding laten maken tussen sender en receiver.                                                        |
+| Knoppen doorgeven via sender | De knoppen (inputs) doorgeven via de sender, net zoals de video wordt doorgegeven.                               |
+| Extra spel: gsm schudden     | Een spel toevoegen waarbij je de gsm moet schudden om te snijden.                                                |
+| Randomizer                   | Bij het starten van de app wordt willekeurig een spel gekozen.                                                   |
+| Uitleg voor elk spel         | Een korte tekst die verschijnt voordat het spel begint, die je kan overslaan met de pijltjestoets.               |
+
+
+
+# eerste spel
+
+Als eerste spel wil ik een doolhof maken. Online heb ik opgezocht hoe je dit het beste aanpakt en kwam ik deze tutorial tegen:
+[Navigating the Labyrinth: A Maze Generator Game using HTML, CSS & JavaScript (GeeksforGeeks)](https://www.geeksforgeeks.org/javascript/navigating-the-labyrinth-a-maze-generator-game-using-html-css-javascript/)
+
+Ik heb de code in mijn receiver-pagina geïntegreerd en ben nu bezig om de onnodige delen te verwijderen. Op dit moment ben ik vooral bezig met CSS te vewijderen.
+
+
+# week 3
+
+Ik heb de demo voor de simple peer in de index.js volledig gezet en dan aan ai gevraagd om dat door te trekken naar de index.html en sender.html.
+
+```javascript
+zou je dit kunnen laten werken via simple peer, dus mijn index en sender?
+```
+
+Now I have a clear picture. I'll convert the project from raw RTCPeerConnection to simple-peer. This simplifies signaling — instead of separate offer/answer/ice events, simple-peer uses a single "signal" event.
+
+Let me update all three files:
+
+Now update sender.html to use simple-peer:
+
+Edited
+sender.html+32-64
+Also remove the now-unnecessary peer select dropdown from sender.html:
+
+Now update the WebRTC part in index.html (receiver) to use simple-peer:
+
+Let me verify the final state of all files:
+
+Ik heb de een andere maze genomen die beter past en werkt bij mijn concept.
+https://codepen.io/anthropoco/pen/ZRmYvZ
+
+Html:
+```javascript
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8">
+</head>
+
+<body>
+  <div id="gradient"></div>
+  <div id="page">
+    <div id="Message-Container">
+      <div id="message">
+        <h1>Congratulations!</h1>
+        <p>You are done.</p>
+        <p id="moves"></p>
+        <input id="okBtn" type="button" onclick="toggleVisablity('Message-Container')" value="Cool!" />
+      </div>
+
+    </div>
+    <div id="menu">
+
+      <div class="custom-select">
+        <select id="diffSelect">
+                    <option value="10">Easy</option>
+                    <option value="15">Medium</option>
+                    <option value="25">Hard</option>
+                    <option value="38">Extreme</option>
+        </select>
+      </div>
+      <input id="startMazeBtn" type="button" onclick="makeMaze()" value="Start" />
+
+    </div>
+
+    <div id="mazeContainer">
+      <canvas id="mazeCanvas" height="1100" width="1100"></canvas>
+    </div>
+  </div>
+</body>
+```
+
+Js:
+```javascript
+function Coordinate(X, Y) {
+    this.x = X;
+    this.y = Y;
+}
+
+function rand(max) {
+    return (Math.floor(Math.random() * max));
+}
+
+function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+function Maze(Width, Height) {
+    var mazeMap;
+    var width = Width;
+    var height = Height;
+    var startCoord, endCoord;
+    var dirs = ["n", "s", "e", "w"];
+    var modDir = {
+        n: {
+            y: -1,
+            x: 0,
+            o: "s"
+        },
+        s: {
+            y: 1,
+            x: 0,
+            o: "n"
+        },
+        e: {
+            y: 0,
+            x: 1,
+            o: "w"
+        },
+        w: {
+            y: 0,
+            x: -1,
+            o: "e"
+        }
+    };
+
+    this.map = function () {
+        return mazeMap;
+    };
+    this.startCoord = function () {
+        return startCoord;
+    };
+    this.endCoord = function () {
+        return endCoord;
+    };
+
+    function genMap() {
+        mazeMap = new Array(height);
+        for (y = 0; y < height; y++) {
+            mazeMap[y] = new Array(width);
+            for (x = 0; x < width; ++x) {
+                mazeMap[y][x] = {
+                    n: false,
+                    s: false,
+                    e: false,
+                    w: false,
+                    visited: false,
+                    priorPos: null
+                };
+            }
+        }
+    }
+
+    function defineMaze() {
+        var isComp = false;
+        var move = false;
+        var cellsVisited = 1;
+        var numLoops = 0;
+        var maxLoops = 0;
+        var pos = new Coordinate(0, 0); //this.endCoord;
+        var numCells = width * height;
+        while (!isComp) {
+            move = false;
+            mazeMap[pos.x][pos.y].visited = true;
+
+            if (numLoops >= maxLoops) {
+                shuffle(dirs);
+                maxLoops = Math.round(rand(height / 8));
+                numLoops = 0;
+            }
+            numLoops++;
+            for (index = 0; index < dirs.length; index++) {
+                var direction = dirs[index];
+                var nx = pos.x + modDir[direction].x;
+                var ny = pos.y + modDir[direction].y;
+
+                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                    //Check if the tile is already visited
+                    if (!mazeMap[nx][ny].visited) {
+                        //Carve through walls from this tile to next
+                        mazeMap[pos.x][pos.y][direction] = true;
+                        mazeMap[nx][ny][modDir[direction].o] = true;
+
+                        //Set Currentcell as next cells Prior visited
+                        mazeMap[nx][ny].priorPos = pos;
+                        //Update Cell position to newly visited location
+                        pos = new Coordinate(nx, ny);
+
+                        cellsVisited++;
+                        //Recursively call this method on the next tile
+                        move = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!move) {
+                //If it failed to find a direction and didnt get back to the EndPoint, move the current position back to the prior cell and Recall the method.
+                pos = mazeMap[pos.x][pos.y].priorPos;
+            }
+            if (numCells == cellsVisited) {
+                isComp = true;
+            }
+        }
+    }
+
+    function defineStartEnd() {
+        switch (rand(4)) {
+            case 0:
+                startCoord = new Coordinate(0, 0);
+                endCoord = new Coordinate(height - 1, width - 1);
+                break;
+            case 1:
+                startCoord = new Coordinate(0, width - 1);
+                endCoord = new Coordinate(height - 1, 0);
+                break;
+            case 2:
+                startCoord = new Coordinate(height - 1, 0);
+                endCoord = new Coordinate(0, width - 1);
+                break;
+            case 3:
+                startCoord = new Coordinate(height - 1, width - 1);
+                endCoord = new Coordinate(0, 0);
+                break;
+        }
+    }
+
+    genMap();
+    defineStartEnd();
+    defineMaze();
+}
+function DrawMaze(Maze, ctx, cellsize) {
+    var map = Maze.map();
+    var cellSize = cellsize;
+    
+    this.redrawMaze = function (cellsize) {
+        cellSize = cellsize;
+        drawMap();
+        drawEnd(Maze.endCoord());
+    };
+
+
+    function drawCell(xCord, yCord, cell) {
+        var x = xCord * cellSize;
+        var y = yCord * cellSize;
+        ctx.lineWidth = cellSize/ 50;
+
+        if (cell.n === false) {
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            
+            ctx.lineTo(x + cellSize, y);
+            ctx.stroke();
+        }
+        if (cell.s === false) {
+            ctx.beginPath();
+            ctx.moveTo(x, y + cellSize);
+            ctx.lineTo(x + cellSize, y + cellSize);
+            ctx.stroke();
+        }
+        if (cell.e === false) {
+            ctx.beginPath();
+            ctx.moveTo(x + cellSize, y);
+            ctx.lineTo(x + cellSize, y + cellSize);
+            ctx.stroke();
+        }
+        if (cell.w === false) {
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x, y + cellSize);
+            ctx.stroke();
+        }
+    }
+
+    function drawMap() {
+        for (x = 0; x < map.length; x++) {
+            for (y = 0; y < map[x].length; y++) {
+                drawCell(x, y, map[x][y]);
+            }
+        }
+    }
+
+    function drawEnd(coord) {
+        var gridSize = 5;
+        var offset = 7;
+
+        var fraction = cellSize / gridSize - 2;
+        var colorSwap = true;
+        for (let y = 0; y < gridSize; y++) {
+            for (let x = 0; x < gridSize; x++) {
+                ctx.beginPath();
+                ctx.rect(
+                    coord.x * cellSize + x * fraction + 4.5,
+                    coord.y * cellSize + y * fraction + 4.5,
+                    fraction,
+                    fraction
+                );
+                if (colorSwap) {
+                    ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+                } else {
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+                }
+                ctx.fill();
+                colorSwap = !colorSwap;
+            }
+        }
+    }
+
+    function clear() {
+        var canvasSize = cellSize * map.length;
+        ctx.clearRect(0, 0, canvasSize, canvasSize);
+    }
+
+    clear();
+    drawMap();
+    drawEnd(Maze.endCoord());
+}
+function Player(maze, c, _cellsize, onComplete, sprite = null) {
+    var ctx = c.getContext("2d");
+    var drawSprite;
+    var moves = 0;
+    drawSprite = drawSpriteCircle;
+    if (sprite != null) {
+        drawSprite = drawSpriteImg;
+    }
+    var player = this;
+    var map = maze.map();
+    var preCoord = new Coordinate(maze.startCoord().x, maze.startCoord().y);
+    var cellSize = _cellsize;
+    var halfCellSize = cellSize / 2;
+
+
+    this.redrawPlayer = function (_cellsize) {
+        cellSize = _cellsize;        
+        drawSpriteImg(preCoord);
+    }
+
+    function drawSpriteCircle(coord) {
+        ctx.beginPath();
+        ctx.fillStyle = "yellow";
+        ctx.arc(
+            (coord.x + 1) * cellSize - halfCellSize,
+            (coord.y + 1) * cellSize - halfCellSize,
+            halfCellSize - 2,
+            0,
+            2 * Math.PI
+        );
+        ctx.fill();
+        if (coord.x === maze.endCoord().x && coord.y === maze.endCoord().y) {
+            onComplete(moves);
+            player.unbindKeyDown();
+        }
+    }
+
+    function drawSpriteImg(coord) {
+        ctx.drawImage(
+            sprite,
+            72,
+            29,
+            320,
+            435,
+            coord.x * cellSize + 4,
+            coord.y * cellSize + 4,
+            cellSize - 8,
+            cellSize - 8
+        );
+        if (coord.x === maze.endCoord().x && coord.y === maze.endCoord().y) {
+            onComplete(moves);
+            player.unbindKeyDown();
+        }
+    }
+
+    function removeSprite(coord) {
+        ctx.clearRect(
+            coord.x * cellSize + 1,
+            coord.y * cellSize + 1,
+            cellSize - 2,
+            cellSize - 2
+        );
+    }
+
+    function check(e) {
+        var cell = map[preCoord.x][preCoord.y];
+        var code = e.keyCode;
+        moves++;
+        switch (code) {
+            case 65:
+            case 37: // west
+                if (cell.w == true) {
+                    removeSprite(preCoord);
+                    preCoord = new Coordinate(preCoord.x - 1, preCoord.y);
+                    drawSprite(preCoord);
+                }
+
+                break;
+            case 87:
+            case 38: // north
+                if (cell.n == true) {
+                    removeSprite(preCoord);
+                    preCoord = new Coordinate(preCoord.x, preCoord.y - 1);
+                    drawSprite(preCoord);
+                }
+                break;
+            case 68:
+            case 39: // east
+                if (cell.e == true) {
+                    removeSprite(preCoord);
+                    preCoord = new Coordinate(preCoord.x + 1, preCoord.y);
+                    drawSprite(preCoord);
+                }
+                break;
+            case 83:
+            case 40: // south
+                if (cell.s == true) {
+                    removeSprite(preCoord);
+                    preCoord = new Coordinate(preCoord.x, preCoord.y + 1);
+                    drawSprite(preCoord);
+                }
+                break;
+        }
+    }
+
+ this.bindKeyDown = function () {
+        window.addEventListener("keydown", check, false);
+
+        $("#mazeCanvas").swipe({
+            swipe: function (event, direction, distance, duration, fingerCount, fingerData) {
+                console.log(direction)
+                switch (direction) {
+                    case "up":
+                        check({
+                            keyCode: 38
+                        });
+                        break;
+                    case "down":
+                        check({
+                            keyCode: 40
+                        })
+                        break;
+                    case "left":
+                        check({
+                            keyCode: 37
+                        });
+                        break;
+                    case "right":
+                        check({
+                            keyCode: 39
+                        });
+                        break;
+                }
+                
+            },
+            threshold: 0
+        });
+    };
+
+    this.unbindKeyDown = function () {
+        window.removeEventListener("keydown", check, false);
+        $("#mazeCanvas").swipe("destroy");
+    };
+
+    drawSprite(maze.startCoord());
+
+    this.bindKeyDown();
+}
+var mazeCanvas = document.getElementById("mazeCanvas");
+var ctx = mazeCanvas.getContext("2d");
+var sprite;
+var maze, draw, player;
+var cellSize;
+var difficulty;
+// sprite.src = 'media/sprite.png';
+
+window.onload = function () {
+    if (window.innerHeight < window.innerWidth) {
+        ctx.canvas.width = window.innerHeight - (75 + (window.innerHeight / 100));
+        ctx.canvas.height = window.innerHeight - (75 + (window.innerHeight / 100));
+    }
+    else{
+        ctx.canvas.width = window.innerWidth - (75 + (window.innerWidth / 100));
+        ctx.canvas.height = window.innerWidth - (75 + (window.innerWidth / 100));
+    }
+    cellSize = mazeCanvas.width / difficulty;
+    defineSprite();
+};
+
+window.onresize = function (event) {
+    if (window.innerHeight < window.innerWidth) {
+        ctx.canvas.width = window.innerHeight - (75 + (window.innerHeight / 100));
+        ctx.canvas.height = window.innerHeight - (75 + (window.innerHeight / 100));
+    }
+    else{
+        ctx.canvas.width = window.innerWidth - (75 + (window.innerWidth / 100));
+        ctx.canvas.height = window.innerWidth - (75 + (window.innerWidth / 100));
+    }
+
+    cellSize = mazeCanvas.width / difficulty;
+    if (player != null) {
+        draw.redrawMaze(cellSize);
+        player.redrawPlayer(cellSize);
+    }
+
+};
+
+function defineSprite() {
+    var spr = new Image();
+    var url = "https://78.media.tumblr.com/99dbdc2634a3695d60120eebe865a785/tumblr_onsimhGBbN1rgyab2o1_1280.png";
+    spr.src = url + "?" + new Date().getTime();
+    spr.setAttribute("crossOrigin", " ");
+    spr.onload = function changeBritness() {
+
+        var virtCanvas = document.createElement('canvas');
+        virtCanvas.width = 500;
+        virtCanvas.height = 500;
+        var context = virtCanvas.getContext('2d');
+
+        context.drawImage(spr, 0, 0, 500, 500);
+        var imgData = context.getImageData(0, 0, 500, 500);
+
+        var factor = 1.20;
+        for (let i = 0; i < imgData.data.length; i += 4) {
+            imgData.data[i] = imgData.data[i] * factor;
+            imgData.data[i + 1] = imgData.data[i + 1] * factor;
+            imgData.data[i + 2] = imgData.data[i + 2] * factor;
+        }
+        context.putImageData(imgData, 0, 0);
+
+        sprite = new Image();
+        sprite.src = virtCanvas.toDataURL();
+    };
+}
+
+
+
+function makeMaze() {
+    document.getElementById("mazeCanvas").classList.add("border");
+    if (player != undefined) {
+        player.unbindKeyDown();
+    }
+    difficulty = getDifficulty();
+    cellSize = mazeCanvas.width / difficulty;
+    maze = new Maze(difficulty, difficulty);
+    draw = new DrawMaze(maze, ctx, cellSize);
+    player = new Player(maze, mazeCanvas, cellSize, displayVictoryMess);//, sprite);
+    if (document.getElementById("mazeContainer").style.opacity < "100") {
+        document.getElementById("mazeContainer").style.opacity = "100";
+    }
+}
+
+function displayVictoryMess(moves) {
+    document.getElementById("moves").innerHTML = "You Moved " + moves + " Steps.";
+    toggleVisablity("Message-Container");
+    document.getElementById("okBtn").focus();
+}
+
+function getDifficulty() {
+    var e = document.getElementById("diffSelect");
+    return e.options[e.selectedIndex].value;
+}
+
+function toggleVisablity(id) {
+    if (document.getElementById(id).style.visibility == "visible") {
+        document.getElementById(id).style.visibility = "hidden";
+    } else {
+        document.getElementById(id).style.visibility = "visible";
+    }
+}
+```
+
+Ai:
+promt:
+```javascript
+wil je dit mooi zetten en werkend maken? De js van de maze mag eigenlijk ook in een appart js file staan en de css ook.
+```
+
+antwoord:
+Now I have a full picture. The CSS has SCSS syntax that doesn't work in plain CSS, the maze JS uses jQuery for swipe but jQuery isn't included, and everything is jumbled in one file. Let me create clean, separated files.
+
+Now replace the entire index.html with a clean version:
+
+cat > "/Users/elinedeblancq/Documents/devine/2de 2025-26/2de semester/cc 4/WebRTC/WebRTCOpdracht/public/index.html" << 'HTMLEOF'
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maze Receiver</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <div id="gradient"></div>
+
+    <div id="page">
+        <!-- Victory overlay -->
+        <div id="Message-Container">
+            <div id="message">
+                <h1>Congratulations!</h1>
+                <p>You are done.</p>
+                <p id="moves"></p>
+                <input id="okBtn" type="button" onclick="toggleVisablity('Message-Container')" value="Cool!" />
+            </div>
+        </div>
+
+        <!-- Menu -->
+        <div id="menu">
+            <div class="custom-select">
+                <select id="diffSelect">
+                    <option value="10">Easy</option>
+                    <option value="15">Medium</option>
+                    <option value="25">Hard</option>
+                    <option value="38">Extreme</option>
+                </select>
+            </div>
+            <input id="startMazeBtn" type="button" onclick="makeMaze()" value="Start" />
+        </div>
+
+        <!-- QR code -->
+        <div id="qr"></div>
+
+        <!-- Maze -->
+        <div id="mazeContainer">
+            <canvas id="mazeCanvas" height="1100" width="1100"></canvas>
+        </div>
+
+        <!-- WebRTC video -->
+        <video id="otherCamera" playsinline autoplay muted></video>
+    </div>
+
+    <!-- Dependencies -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/simple-peer@9/simplepeer.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+
+    <!-- App scripts -->
+    <script src="/js/maze.js"></script>
+    <script src="/js/connection.js"></script>
+</body>
+
+</html>
+HTMLEOF
+Alles is opgesplitst en opgeruimd. Hier is de nieuwe structuur:
+
+Wat is opgelost:
+
+CSS: SCSS-syntax ($variabelen, @extend, %placeholders, nesting) omgezet naar geldige CSS
+Maze JS: Alle maze-gerelateerde code (Coordinate, Maze, DrawMaze, Player, UI functies) in maze.js
+Connection JS: WebRTC simple-peer logica + QR code in connection.js
+Touch support: jQuery swipe dependency vervangen door vanilla touchstart/touchend events — geen jQuery meer nodig
+index.html: Van ~775 regels naar ~65 regels, enkel markup
+Claude Opus 4.6 • 3x
+
+--> dit werkt niet goed
+Ik ben opnieuw begonen van voor de maze te veranderen.
+
+Dan heb ik de nieuwe maze weer toegevoeg.
+Deze werkte niet direct en heb ik errors gekregen, heb aan ai gevraagd dit werkende te maken.
+
+promt:
+```javascript
+Kan je nu mijn maze  werkende maken want ik heb nu deze errors: (index):1 Access to image at 'https://78.media.tumblr.com/99dbdc2634a3695d60120eebe865a785/tumblr_onsimhGBbN1rgyab2o1_1280.png?1773311149149' from origin 'https://172.30.82.156:3000' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.Understand this error
+tumblr_onsimhGBbN1rgyab2o1_1280.png?1773311149149:1  Failed to load resource: net::ERR_FAILEDUnderstand this error
+5(index):205 Uncaught ReferenceError: makeMaze is not defined
+    at HTMLInputElement.onclick 
+```
+
+
+
