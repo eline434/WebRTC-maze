@@ -1,0 +1,184 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* ── Receiver (index.html) ── */
+#page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+}
+
+#menu {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+#menu select,
+#menu input[type="button"] {
+    padding: 10px 20px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+#menu select {
+    background: #16213e;
+    color: #eee;
+    border: 2px solid #0f3460;
+}
+
+#menu input[type="button"] {
+    background: #e94560;
+    color: #fff;
+    font-weight: 700;
+    transition: background .2s;
+}
+
+#menu input[type="button"]:hover {
+    background: #c73650;
+}
+
+#qr {
+    margin: 10px 0;
+}
+
+#mazeContainer {
+    display: flex;
+    justify-content: center;
+}
+
+#mazeCanvas {
+    background: #16213e;
+    border: 4px solid #0f3460;
+    border-radius: 10px;
+    max-width: 90vw;
+    max-height: 70vh;
+}
+
+#status {
+    font-size: 0.9rem;
+    color: #aaa;
+    min-height: 1.4em;
+}
+
+/* Victory overlay */
+#Message-Container {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .7);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+}
+
+#Message-Container.visible {
+    display: flex;
+}
+
+#message {
+    background: #16213e;
+    padding: 40px 60px;
+    border-radius: 16px;
+    text-align: center;
+    border: 2px solid #e94560;
+}
+
+#message h1 {
+    color: #e94560;
+    margin-bottom: 10px;
+}
+
+#message p {
+    margin: 6px 0;
+}
+
+#okBtn {
+    margin-top: 16px;
+    padding: 10px 30px;
+    background: #e94560;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* ── Sender (sender.html) ── */
+#sender-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    padding: 40px 20px;
+}
+
+#sender-page h1 {
+    color: #e94560;
+}
+
+#sender-status {
+    font-size: 0.95rem;
+    color: #aaa;
+    min-height: 1.4em;
+}
+
+.arrow-grid {
+    display: grid;
+    grid-template-areas:
+        ". up ."
+        "left . right"
+        ". down .";
+    gap: 10px;
+}
+
+.arrow-grid button {
+    width: 80px;
+    height: 80px;
+    font-size: 2rem;
+    border: none;
+    border-radius: 12px;
+    background: #0f3460;
+    color: #eee;
+    cursor: pointer;
+    transition: background .15s, transform .1s;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.arrow-grid button:active,
+.arrow-grid button.active {
+    background: #e94560;
+    transform: scale(0.93);
+}
+
+#btnUp    { grid-area: up; }
+#btnLeft  { grid-area: left; }
+#btnRight { grid-area: right; }
+#btnDown  { grid-area: down; }
+
+@media (max-width: 500px) {
+    .arrow-grid button {
+        width: 64px;
+        height: 64px;
+        font-size: 1.5rem;
+    }
+}
