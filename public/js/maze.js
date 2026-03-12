@@ -1,8 +1,3 @@
-/**
- * maze.js – Generates and renders a random maze on a <canvas>.
- * Exposes global helpers so connection.js can call them.
- */
-
 /* ── DOM refs ── */
 const canvas = document.getElementById('mazeCanvas');
 const pen = canvas.getContext('2d');
@@ -150,7 +145,7 @@ function buildMaze(size) {
 }
 
 /* ── Keep the old name so the "New Maze" button & connection.js still work ── */
-function makeMaze() {
+export function makeMaze() {
     startRound();
 }
 
@@ -201,7 +196,7 @@ function drawMaze() {
 }
 
 /* ── Public: move player (called from connection.js) ── */
-function movePlayer(direction) {
+export function movePlayer(direction) {
     if (!mazeReady) return;
 
     const c = cells[player.x][player.y];

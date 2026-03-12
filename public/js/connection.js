@@ -2,6 +2,7 @@
  * connection.js – Receiver-side WebRTC (simple-peer) + Socket.IO signalling.
  * Listens for arrow-key commands over the data channel and drives the maze.
  */
+import { makeMaze, movePlayer } from "./maze.js";
 
 const $status = document.getElementById('status');
 

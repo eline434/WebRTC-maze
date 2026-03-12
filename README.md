@@ -1218,4 +1218,37 @@ promt:
 Can you make it so that when you complete the maze, it restarts and makes it a bit more difficult? After three levels, you'll get the time it took. You'll then have the option to restart. After completing it a second time, you'll get your best time and the time for that round.
 ```
 
-output
+output:
+Now I'll implement all the changes. Let me update the maze.js, index.html, and style.css files together.
+
+Let me verify the final state of the files:
+
+Everything looks good. Here's a summary of what was implemented:
+
+3-level round system:
+
+Completing a maze auto-advances to the next level (after a 1.2s "Level done" flash)
+Each level increases the grid size by 3 cells (e.g. Easy: 10 → 13 → 16)
+A "Level X / 3" indicator shows progress in the menu bar
+Timer & best time:
+
+A timer starts when the round begins and runs across all 3 levels
+After level 3, a "Round Complete!" overlay shows the total time
+On subsequent rounds it also shows your best time, with a "New best!" highlight if you beat it
+Restart flow:
+
+The "Play Again" button on the round-complete overlay starts a fresh 3-level round from the base difficulty
+
+review:
+Zelf ga ik nog een paar dingen weghalen en verbeteren zodat het beter werkt.
+
+
+## consult
+- pijltjes op de gsm groter maken
+- exporten via 1 js file (controler is de hoofd js file en die krijgt alles binnen --> stuurt dat dan door via export en maze import dan wat nodig is om het dan weer te exporten)
+--> qr-code doen verdwijnen
+--> opnieuw starten wanneer disconect
+
+zelf:
+- bewegen ook via gyroscoop laten gaan
+- om zoveel seconden de richting doen veranderen en dat moeilijker per level maken
