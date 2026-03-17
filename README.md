@@ -1210,8 +1210,9 @@ index.html — clean receiver page
 index.js — server unchanged (already had the simple signal relay)
 Run npm start and open https://localhost:3000 to try it.
 
+Wat gegenereerd was, was gelukkig bijna dezelfde code als de eerste maze die ik hed en zo ook makkelijk te verstaan was.
 
-
+Hierbij heb ik dan dit gevoegd:
 
 promt:
 ```javascript
@@ -1252,3 +1253,6 @@ Zelf ga ik nog een paar dingen weghalen en verbeteren zodat het beter werkt.
 zelf:
 - bewegen ook via gyroscoop laten gaan
 - om zoveel seconden de richting doen veranderen en dat moeilijker per level maken
+
+## gyroscoop
+
