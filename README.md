@@ -1256,3 +1256,216 @@ zelf:
 
 ## gyroscoop
 
+Online heb ik gezocht voor een voorbeeld hiervan en kwam uit op deze code:
+https://github.com/shortland/Tilt/blob/master/js/tilt.js
+
+Hiervan heb ik dit toegevoeg aan de sender
+```javascript
+	if(window.DeviceMotionEvent)
+	{
+		window.addEventListener("devicemotion", motion, false);
+	}
+	else
+	{
+		alert('Tilt is not supported on your current device. Try this page on your mobile device?');
+	}
+
+```
+
+Dit is om de gyroscoop aan te roepen en kijken of dit ook werkt
+
+Dan heb ik de code toegevoegd die kijkt hoe de gyroscoop staat.
+
+```javascript
+function motion(event)
+{
+	var left_right = event.accelerationIncludingGravity.x;
+	var top_bottom = event.accelerationIncludingGravity.y;
+	
+	var pre_move_y = Math.floor(top_bottom);
+	var pre_move_x = Math.floor(left_right);
+	
+	var key_x = localStorage.getItem('presetx');
+	var key_y = localStorage.getItem('presety');
+	if(!key_x && !key_y)
+	{
+		var y_preset = parseInt(pre_move_y);
+		var x_preset = parseInt(pre_move_x);
+		localStorage.setItem('presety', y_preset);
+		localStorage.setItem('presetx', x_preset);
+		return false;
+		// next motion event will get executed (I guess we could potentially execute this one aswell...
+	}
+	else
+	{
+		if(pre_move_y < 0)
+		{
+			var move_y = parseInt(pre_move_y) + Math.abs(parseInt(key_y));	
+		}
+		else
+		{
+			var move_y = (pre_move_y) - (key_y);	
+		}
+		if(pre_move_x < 0)
+		{
+			var move_x = parseInt(pre_move_x) + Math.abs(parseInt(key_x));	
+		}
+		else
+		{
+			var move_x = (pre_move_x) - (key_x);	
+		}
+	}
+	
+	if(move_y < 0)
+	{
+		var y_sign = '-';
+		var move_y = Math.abs(move_y);
+	}
+	else
+	{
+		var y_sign = '+';
+	}
+	
+	if(move_x < 0)
+	{
+		var x_sign = '+';
+		var move_x = Math.abs(move_x);
+	}
+	else
+	{
+		var x_sign = '-';
+	}
+}
+```
+
+Dan heb ik 
+
+```javascript
+if(move_y < 0)
+	{
+		var y_sign = '-';
+		var move_y = Math.abs(move_y);
+	}
+	else
+	{
+		var y_sign = '+';
+	}
+	
+	if(move_x < 0)
+	{
+		var x_sign = '+';
+		var move_x = Math.abs(move_x);
+	}
+	else
+	{
+		var x_sign = '-';
+	}
+}
+
+vervangen door
+
+```javascript
+if (move_y < 0) {
+                sendMove('ArrowUp')
+            }
+            else {
+                sendMove('ArrowDown')
+            }
+
+            if (move_x < 0) {
+                sendMove('ArrowRight')
+            }
+            else {
+                sendMove('ArrowLeft')
+            }
+```
+
+Dit maakt dat de move word doorgegeven met de juiste richting naar de index en is hetzelfde als hoe de pijltjes werken.
+
+Het werkte maar was alleen nog veel te gevoelig, dus heb ik aan ai gevraagd om het niet x en y tegelijk uit te voeren maar te maken dat hij de hene pakt dat het meest getild is om uit te voeren/ door te geven en dat hij minimaal iets moet hebben van tilt voor hij het telt zodat je geen perongelijke zetten doet.
+
+promt:
+```javascript
+Can you try not to execute x and y simultaneously, but to make sure it picks the one that is tilted the most to execute/pass, and that it requires at least some tilt before counting it, so that you don't make odd moves.
+```
+
+output:
+Edited
+sender.html+23-12
+Updated the motion logic to use a minimum tilt threshold and choose only the dominant axis, so you won’t send both X and Y moves or react to tiny jitters. See the updated block in sender.html:74-140.
+
+If you want, I can:
+
+Tune the threshold value to feel more/less sensitive.
+Add a short cooldown so repeated tilts don’t spam moves.
+
+
+Dit werkte al beter maar nog altijd niet perfect, dus heb ik verder gevraagd.
+
+promt:
+```javascript
+It also reacts when I go back to my phone laying flat for the up and down (the up and down stil don't work that good). Can you make that if I tilt my phone that is is only that way (the way it is most tilted) that reacts and moves? And that if you tilt your phone back to normal it does not react to it?
+```
+
+output:
+I updated the tilt handling so it only fires when you’re clearly tilted in one dominant direction, and it won’t send a move when you return to neutral. It now resets on neutral and only sends when the direction actually changes. See sender.html:62-144.
+
+If you want it to feel steadier, I can:
+
+Increase the threshold to reduce sensitivity.
+Add a small cooldown (e.g. 150–250ms) so it doesn’t spam on shaky hands.
+
+
+promt:
+```javascript
+The up stil reacts to fast, can you make sure it only works when i tilt the top of my phone down?
+```
+
+output:
+Edited
+sender.html+2-2
+Adjusted the vertical logic so ArrowUp only fires when move_y <= -threshold and ArrowDown only when move_y >= threshold. That prevents small drift or returning to neutral from triggering. See sender.html:100-126.
+
+If ArrowUp now feels reversed, tell me whether your “top of phone down” should move up or down in the maze and I’ll flip it.
+
+--> het bleek dat mijn up en down gedraad stonden voor de gyroscoop dus heeft ai die geswitcht.
+
+Uiteindlijk werkte het nog altijd niet hoe ik wou dus ben ik terug gegaan voor het moment dat ik vroeg om x & y niet tegelijk te laten gaan.
+
+Ik heb dan geprobeerd er een vaste waarde aan te geven van wanneer het zou moeten reageren.
+
+```javascript
+if (move_y < -10) {
+                sendMove('ArrowUp')
+            }
+            if (move_y > 10) {
+                sendMove('ArrowDown')
+            }
+
+            if (move_x < -10) {
+                sendMove('ArrowRight')
+            }
+            if (move_x > 10) {
+                sendMove('ArrowLeft')
+            }
+```
+
+Dit werkte niet. Heb dan geprobeerd aan ai te vragen door gebruik te maken van graden.
+
+promt:
+```javascript
+Can you make that the sendMove is triggerd when th phone is in a 35degrees different from laying flat? so sendMove('ArrowUp') should be called when the top of the phone is down and the bottom is up, sendMove('ArrowDown') is then the opposed, sendMove('ArrowRight') should be when the right side of the phone is down and the left side up and again sendMove('ArrowLeft') is the opposed.
+```
+
+output:
+Edited
+sender.html+10-33
+Updated the motion logic to trigger moves only when pitch or roll exceeds 35 degrees from flat, using the direction mapping you described. The change is in sender.html:74-114.
+
+If the directions feel inverted on your device, tell me which one is reversed and I’ll flip it.
+
+
+Door nu ook de z-index te gebruiken kan hij het kantelen beter uitvoeren en uitreken. Door het gebruik van de z-index is het mogelijk om de graden van de kanteling uit te reken waardoor het makkelijker is om aan te geven hoe en wat er veranderd is.
+
+Dit werkte redelijk goed, alleen wou ik dat hij toch nog iets minder snel reageerde. Dus heb ik de threshold van 35 graden naar 55 gezet.
+

@@ -74,46 +74,22 @@
         function motion(event) {
             var left_right = event.accelerationIncludingGravity.x;
             var top_bottom = event.accelerationIncludingGravity.y;
+            var front_back = event.accelerationIncludingGravity.z;
 
-            var pre_move_y = Math.floor(top_bottom);
-            var pre_move_x = Math.floor(left_right);
+            var pitch_deg = Math.atan2(top_bottom, front_back) * (180 / Math.PI);
+            var roll_deg = Math.atan2(left_right, front_back) * (180 / Math.PI);
+            var threshold = 55;
 
-            var key_x = localStorage.getItem('presetx');
-            var key_y = localStorage.getItem('presety');
-            if (!key_x && !key_y) {
-                var y_preset = parseInt(pre_move_y);
-                var x_preset = parseInt(pre_move_x);
-                localStorage.setItem('presety', y_preset);
-                localStorage.setItem('presetx', x_preset);
-                return false;
-                // next motion event will get executed (I guess we could potentially execute this one aswell...
-            }
-            else {
-                if (pre_move_y < 0) {
-                    var move_y = parseInt(pre_move_y) + Math.abs(parseInt(key_y));
-                }
-                else {
-                    var move_y = (pre_move_y) - (key_y);
-                }
-                if (pre_move_x < 0) {
-                    var move_x = parseInt(pre_move_x) + Math.abs(parseInt(key_x));
-                }
-                else {
-                    var move_x = (pre_move_x) - (key_x);
-                }
-            }
-
-            if (move_y < 0) {
+            if (pitch_deg < -threshold) {
                 sendMove('ArrowUp')
             }
-            else {
+            if (pitch_deg > threshold) {
                 sendMove('ArrowDown')
             }
-
-            if (move_x < 0) {
+            if (roll_deg < -threshold) {
                 sendMove('ArrowRight')
             }
-            else {
+            if (roll_deg > threshold) {
                 sendMove('ArrowLeft')
             }
         }
