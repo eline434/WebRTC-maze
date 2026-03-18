@@ -149,6 +149,34 @@ export function makeMaze() {
     startRound();
 }
 
+/* ── Public: reset to initial (no maze yet) state ── */
+export function resetMaze() {
+    mazeReady = false;
+    cols = 0;
+    rows = 0;
+    cells = [];
+    generatedMaze = [];
+    solutionPath = [];
+    trail = [];
+    points = 0;
+    currentLevel = 0;
+    baseDifficulty = 10;
+    roundStartTime = null;
+    roundInProgress = false;
+    bestTime = null;
+
+    pen.clearRect(0, 0, canvas.width, canvas.height);
+
+    const overlay = document.getElementById('Message-Container');
+    if (overlay) overlay.classList.remove('visible');
+
+    const lc = document.getElementById('levelComplete');
+    if (lc) lc.classList.remove('visible');
+
+    const levelIndicator = document.getElementById('levelIndicator');
+    if (levelIndicator) levelIndicator.textContent = '';
+}
+
 /* ── Update level indicator in the UI ── */
 function updateLevelIndicator() {
     const el = document.getElementById('levelIndicator');

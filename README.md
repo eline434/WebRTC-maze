@@ -1469,3 +1469,25 @@ Door nu ook de z-index te gebruiken kan hij het kantelen beter uitvoeren en uitr
 
 Dit werkte redelijk goed, alleen wou ik dat hij toch nog iets minder snel reageerde. Dus heb ik de threshold van 35 graden naar 55 gezet.
 
+## hide qr and reset
+
+Ik wou dat na het connecten van de peer conection dat de qr-code verdeen en dus ook weer verscheen wanneer het disconnecteerde en heb dan direct ook gevraagd om er een refresh op te zetten.
+
+promt:
+```javascript
+Can you make it so that when the connection is established, the QR code disappears, and when the sender disconnects, the QR code reappears and everything resets from the beginning (this means that the screen looks like it did when no one has connected yet, so no maze yet)?
+```
+
+output:
+Made the receiver reset to the initial “waiting for scan” state when the sender disconnects. QR hides on connect, reappears on disconnect, and the maze UI is cleared (no maze, no overlays, level indicator reset).
+
+Changes:
+
+Reset helper added in maze.js:160-198
+QR hide/show + reset on disconnect in connection.js:6-84
+If you want the status text to switch back to “Waiting for sender to scan QR code…” immediately on disconnect, I can adjust that too.
+
+Hier bij werkte het wel goed om de qr-code te doen verdwijnen. Dit was ook een een simple manier gedaan door de display style aan te passen wanneer peer.on connect binnen komt en zo ook terug verschijnt wanneer peer.on close voor de disconect.
+
+De peer.on close krijgt hij gewoon wat later door waardoor het langer duurt maar dit werkt ook! De maze reset werkt op ook met  peer.on close voor de disconect om te restarten.
+
