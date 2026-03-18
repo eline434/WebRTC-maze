@@ -71,7 +71,29 @@
             return results === null ? false : decodeURIComponent(results[1].replace(/\+/g, ' '));
         }
 
-        /* ── Boot ── */
+        function motion(event) {
+            var left_right = event.accelerationIncludingGravity.x;
+            var top_bottom = event.accelerationIncludingGravity.y;
+            var front_back = event.accelerationIncludingGravity.z;
+
+            var pitch_deg = Math.atan2(top_bottom, front_back) * (180 / Math.PI);
+            var roll_deg = Math.atan2(left_right, front_back) * (180 / Math.PI);
+            var threshold = 55;
+
+            if (pitch_deg < -threshold) {
+                sendMove('ArrowUp')
+            }
+            if (pitch_deg > threshold) {
+                sendMove('ArrowDown')
+            }
+            if (roll_deg < -threshold) {
+                sendMove('ArrowRight')
+            }
+            if (roll_deg > threshold) {
+                sendMove('ArrowLeft')
+            }
+        }
+
         (function init() {
             const targetSocketId = getUrlParameter('id');
             if (!targetSocketId) {
@@ -120,6 +142,13 @@
                 console.log('Received signal from', fromId);
                 if (peer) peer.signal(signalData);
             });
+
+            if (window.DeviceMotionEvent) {
+                window.addEventListener("devicemotion", motion, false);
+            }
+            else {
+                alert('Tilt is not supported on your current device. Try this page on your mobile device?');
+            }
         })();
     </script>
 </body>
