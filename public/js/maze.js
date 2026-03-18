@@ -1,15 +1,12 @@
 /* ── DOM refs ── */
 const canvas = document.getElementById('mazeCanvas');
 const pen = canvas.getContext('2d');
-const $moves = document.getElementById('moves');
 
 /* ── State ── */
 let cols, rows, cellSize;
 let cells = [];
 let generatedMaze = [];
-let solutionPath = [];
 let trail = [];
-let points = 0;
 let mazeReady = false;
 
 const player = { x: 0, y: 0, color: '#e94560' };
@@ -22,7 +19,6 @@ let currentLevel = 0;          // 0-based, incremented before each maze
 let baseDifficulty = 10;         // set from dropdown on first start
 let roundStartTime = null;       // Date.now() when round begins
 let bestTime = null;       // best round time in ms (persists across rounds)
-let roundInProgress = false;
 
 /* ── Cell class ── */
 class Cell {
@@ -75,36 +71,12 @@ function carve(x, y) {
     }
 }
 
-/* ── Solve maze (DFS) to validate moves ── */
-function solveMaze() {
-    const visited = Array.from({ length: rows }, () => Array(cols).fill(false));
-    const path = [];
-
-    function dfs(x, y) {
-        if (x < 0 || x >= cols || y < 0 || y >= rows || visited[y][x]) return false;
-        visited[y][x] = true;
-        path.push({ x, y });
-        if (x === cols - 1 && y === rows - 1) return true;
-        const c = generatedMaze[x][y];
-        if (!c.walls.top && dfs(x, y - 1)) return true;
-        if (!c.walls.right && dfs(x + 1, y)) return true;
-        if (!c.walls.bottom && dfs(x, y + 1)) return true;
-        if (!c.walls.left && dfs(x - 1, y)) return true;
-        path.pop();
-        return false;
-    }
-
-    dfs(0, 0);
-    return path;
-}
-
 /* ── Public: start a brand-new round (3 levels) ── */
 function startRound() {
     const sel = document.getElementById('diffSelect');
     baseDifficulty = sel ? parseInt(sel.value, 10) : 10;
     currentLevel = 0;
     roundStartTime = Date.now();
-    roundInProgress = true;
     updateLevelIndicator();
     buildMaze(baseDifficulty);
 }
@@ -133,11 +105,9 @@ function buildMaze(size) {
 
     carve(0, 0);
     generatedMaze = cells.map(row => row.map(c => ({ ...c })));
-    solutionPath = solveMaze();
 
     player.x = 0;
     player.y = 0;
-    points = 0;
     trail = [];
     mazeReady = true;
 
@@ -156,13 +126,10 @@ export function resetMaze() {
     rows = 0;
     cells = [];
     generatedMaze = [];
-    solutionPath = [];
     trail = [];
-    points = 0;
     currentLevel = 0;
     baseDifficulty = 10;
     roundStartTime = null;
-    roundInProgress = false;
     bestTime = null;
 
     pen.clearRect(0, 0, canvas.width, canvas.height);
@@ -238,7 +205,6 @@ export function movePlayer(direction) {
     }
 
     if (!moved) return;
-    points++;
     trail.push({ x: player.x, y: player.y });
     drawMaze();
 
@@ -248,7 +214,6 @@ export function movePlayer(direction) {
 
         if (currentLevel + 1 < MAX_LEVELS) {
             // ── Mid-round: auto-advance after brief flash ──
-            showLevelComplete(currentLevel + 1, points);
             setTimeout(() => {
                 hideLevelComplete();
                 nextLevel();
@@ -256,20 +221,12 @@ export function movePlayer(direction) {
         } else {
             // ── Round finished ──
             const elapsed = Date.now() - roundStartTime;
-            roundInProgress = false;
             showRoundComplete(elapsed);
         }
     }
 }
 
 /* ── Mid-round "level complete" flash ── */
-function showLevelComplete(levelNum, moves) {
-    const lc = document.getElementById('levelComplete');
-    if (!lc) return;
-    const txt = lc.querySelector('.lc-text');
-    if (txt) txt.textContent = `Level ${levelNum} done — ${moves} moves`;
-    lc.classList.add('visible');
-}
 function hideLevelComplete() {
     const lc = document.getElementById('levelComplete');
     if (lc) lc.classList.remove('visible');
@@ -318,8 +275,3 @@ function formatTime(ms) {
     return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
 }
 
-/* ── Legacy toggle (kept for any external callers) ── */
-function toggleVisablity(id) {
-    const el = document.getElementById(id);
-    if (el) el.classList.remove('visible');
-}

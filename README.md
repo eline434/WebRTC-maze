@@ -1489,5 +1489,22 @@ If you want the status text to switch back to “Waiting for sender to scan QR c
 
 Hier bij werkte het wel goed om de qr-code te doen verdwijnen. Dit was ook een een simple manier gedaan door de display style aan te passen wanneer peer.on connect binnen komt en zo ook terug verschijnt wanneer peer.on close voor de disconect.
 
-De peer.on close krijgt hij gewoon wat later door waardoor het langer duurt maar dit werkt ook! De maze reset werkt op ook met  peer.on close voor de disconect om te restarten.
+De peer.on close krijgt hij gewoon wat later door waardoor het langer duurt maar dit werkt ook! 
+De maze reset werkt op ook met peer.on close voor de disconect om te restarten. Het zet zichzelf ook onzichtbaar door de class visible weg te doen en alles in het canvas leeg te zetten.
+
+Zelf heb ik dan de moves weggehaald omdat ik dit eigenlijk niet in het spelletje wil. Dit heb ik gedaan door alles met points te verwijderen en het tekste van moves (je het zoveel moves gedaan).
+
+Ik wou snel al een keer mijn code opschonen en heb dit dan ook aan ai gevraagd om alles te verwijderen dat niet gebruikt wordt, vooral om te zien of ik nog dingen ben vergeten om weg te doen van de points.
+
+promt:
+```javascript
+Can you remove the code that we don't use anymore, if there is some.
+```
+
+output:
+Edited
+maze.js+0-41
+Removed unused maze code (unused state, DFS solver, and legacy helpers) in maze.js.
+
+If you want me to also strip any unused HTML elements or CSS, point me to the file(s) you want trimmed.
 
