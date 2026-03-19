@@ -15,8 +15,9 @@ const finish = { color: '#53d769' };
 /* ── Round / level progression ── */
 const MAX_LEVELS = 3;
 const DIFF_INCREMENT = 3;          // extra grid cells per level
+const DEFAULT_DIFFICULTY = 10;
 let currentLevel = 0;          // 0-based, incremented before each maze
-let baseDifficulty = 10;         // set from dropdown on first start
+let baseDifficulty = DEFAULT_DIFFICULTY;
 let roundStartTime = null;       // Date.now() when round begins
 let bestTime = null;       // best round time in ms (persists across rounds)
 
@@ -73,18 +74,15 @@ function carve(x, y) {
 
 /* ── Public: start a brand-new round (3 levels) ── */
 function startRound() {
-    const sel = document.getElementById('diffSelect');
-    baseDifficulty = sel ? parseInt(sel.value, 10) : 10;
+    baseDifficulty = DEFAULT_DIFFICULTY;
     currentLevel = 0;
     roundStartTime = Date.now();
-    updateLevelIndicator();
     buildMaze(baseDifficulty);
 }
 
 /* ── Advance to the next level inside a round ── */
 function nextLevel() {
     currentLevel++;
-    updateLevelIndicator();
     const size = baseDifficulty + currentLevel * DIFF_INCREMENT;
     buildMaze(size);
 }
@@ -128,7 +126,7 @@ export function resetMaze() {
     generatedMaze = [];
     trail = [];
     currentLevel = 0;
-    baseDifficulty = 10;
+    baseDifficulty = DEFAULT_DIFFICULTY;
     roundStartTime = null;
     bestTime = null;
 
@@ -140,14 +138,6 @@ export function resetMaze() {
     const lc = document.getElementById('levelComplete');
     if (lc) lc.classList.remove('visible');
 
-    const levelIndicator = document.getElementById('levelIndicator');
-    if (levelIndicator) levelIndicator.textContent = '';
-}
-
-/* ── Update level indicator in the UI ── */
-function updateLevelIndicator() {
-    const el = document.getElementById('levelIndicator');
-    if (el) el.textContent = `Level ${currentLevel + 1} / ${MAX_LEVELS}`;
 }
 
 /* ── Drawing ── */
@@ -238,7 +228,6 @@ function showRoundComplete(elapsed) {
     const overlay = document.getElementById('Message-Container');
     const $title = document.querySelector('#message h1');
     const $body = document.getElementById('roundBody');
-    const $btn = document.getElementById('okBtn');
 
     let html = `<p>Total time: <strong>${fmt}</strong></p>`;
 
@@ -256,15 +245,7 @@ function showRoundComplete(elapsed) {
 
     if ($title) $title.textContent = 'Round Complete!';
     if ($body) $body.innerHTML = html;
-    if ($btn) $btn.value = 'Play Again';
     if (overlay) overlay.classList.add('visible');
-}
-
-/* ── Restart from overlay button ── */
-function restartFromOverlay() {
-    const overlay = document.getElementById('Message-Container');
-    if (overlay) overlay.classList.remove('visible');
-    startRound();
 }
 
 /* ── Format ms → m:ss.s ── */

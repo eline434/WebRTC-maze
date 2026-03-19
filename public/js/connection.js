@@ -60,14 +60,16 @@ function initConnection() {
                 console.log('Peer connected!');
                 if ($status) $status.textContent = 'Connected! Sender can control the maze.';
                 hideQr();
-                // Generate the maze as soon as the peer connects
-                makeMaze();
             });
 
             peer.on('data', raw => {
                 // Sender sends JSON messages like { type: "move", direction: "ArrowUp" }
                 try {
                     const msg = JSON.parse(raw.toString());
+                    if (msg.type === 'start') {
+                        resetMaze();
+                        makeMaze();
+                    }
                     if (msg.type === 'move') {
                         movePlayer(msg.direction);
                     }

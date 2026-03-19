@@ -13,6 +13,8 @@
         <h1>Controller</h1>
         <p id="sender-status">Connecting…</p>
 
+        <button id="startBtn" class="primary-btn">Start / Restart</button>
+
         <div class="arrow-grid">
             <button id="btnUp">&#9650;</button>
             <button id="btnLeft">&#9664;</button>
@@ -37,11 +39,18 @@
             peer.send(JSON.stringify({ type: 'move', direction }));
         }
 
+        function sendControl(type) {
+            if (!peer || !connected) return;
+            peer.send(JSON.stringify({ type }));
+        }
+
         /* ── Button controls ── */
         document.getElementById('btnUp').addEventListener('click', () => sendMove('ArrowUp'));
         document.getElementById('btnDown').addEventListener('click', () => sendMove('ArrowDown'));
         document.getElementById('btnLeft').addEventListener('click', () => sendMove('ArrowLeft'));
         document.getElementById('btnRight').addEventListener('click', () => sendMove('ArrowRight'));
+
+        document.getElementById('startBtn').addEventListener('click', () => sendControl('start'));
 
         /* ── Keyboard controls ── */
         document.addEventListener('keydown', e => {

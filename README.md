@@ -1508,3 +1508,75 @@ Removed unused maze code (unused state, DFS solver, and legacy helpers) in maze.
 
 If you want me to also strip any unused HTML elements or CSS, point me to the file(s) you want trimmed.
 
+Ook heb ik de code voor de levels te bepalen weggehaald omdat ik dat eigenijk niet gebruik. Dat is deze code die ik weg doe:
+
+```javascript
+        <!-- Menu -->
+        <div id="menu">
+            <div class="custom-select">
+                <select id="diffSelect">
+                    <option value="10">Easy</option>
+                    <option value="15">Medium</option>
+                    <option value="25">Hard</option>
+                    <option value="38">Extreme</option>
+                </select>
+            </div>
+            <input id="startMazeBtn" type="button" onclick="makeMaze()" value="New Maze" />
+            <span id="levelIndicator"></span>
+        </div>
+```
+Dan heb ik aan AI weer gevraagd om de js en css code weg te doen die alleen met dat had te maken.
+
+promt:
+```javascript
+Do you want to remove all js code and css code that was only used for: <div id="menu">
+<div class="custom-select">
+<select id="diffSelect">
+<option value="10">Easy</option>
+<option value="15">Medium</option>
+<option value="25">Hard</option>
+<option value="38">Extreme</option>
+</select>
+</div>
+<input id="startMazeBtn" type="button" onclick="makeMaze()" value="New Maze" />
+<span id="levelIndicator"></span>
+</div>
+```
+
+output:
+Removed the menu-only JS/CSS now that the menu markup is gone.
+
+JS cleanup in maze.js
+CSS cleanup in style.css
+If you also want the level system itself removed (3 levels + timing), say the word and I’ll strip that too.
+
+Nu wou ik dat je start aanroept op de gsm ipv op de index.
+
+promt:
+```javascript
+Would you like to put a button on the transmitter that starts the game only when you press it, and that also allows you to restart? The restart button on the index can also be removed.
+```
+output:
+Added a Start/Restart button on the sender that controls when the maze begins, and removed the receiver’s restart button.
+
+What changed:
+
+Sender now sends a start message; receiver starts/reset the maze only on that signal: sender.html, connection.js
+Receiver overlay button removed: index.html
+Restart button logic removed from maze code: maze.js
+Styles updated for the sender button; old overlay button styles removed: style.css
+If you want the status text to say “Press Start on the controller” after connect, I can add that.
+
+De code die eerst automatisch de maze triggerde zit nu achter een button die op de sender staat.
+
+Dan heb ik nog in de css de knoppen op de sender groter gezet.
+
+```javascript
+button {
+    width: 100px;
+    height: 100px;
+}
+```
+
+Ook zag ik dat ik een media querie had en heb die verwijderd.
+
