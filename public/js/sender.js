@@ -37,18 +37,38 @@ function motion(event) {
     var threshold = 55;
 
     if (pitch_deg < -threshold) {
-        sendMove('ArrowUp')
+        sendMove(getMappedDirection('pitchUp'));
     }
     if (pitch_deg > threshold) {
-        sendMove('ArrowDown')
+        sendMove(getMappedDirection('pitchDown'));
     }
     if (roll_deg < -threshold) {
-        sendMove('ArrowRight')
+        sendMove(getMappedDirection('rollLeft'));
     }
     if (roll_deg > threshold) {
-        sendMove('ArrowLeft')
+        sendMove(getMappedDirection('rollRight'));
     }
 }
+
+const directionMap = {
+    pitchUp: ['ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft'],
+    pitchDown: ['ArrowDown', 'ArrowLeft', 'ArrowUp', 'ArrowRight'],
+    rollLeft: ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp'],
+    rollRight: ['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown']
+};
+
+let activeIndex = 0;
+
+function getMappedDirection(key) {
+    const list = directionMap[key];
+    return list ? list[activeIndex] : null;
+}
+
+function pickRandomIndex() {
+    activeIndex = Math.floor(Math.random() * 4);
+}
+
+setInterval(pickRandomIndex, 20000);
 
 (function init() {
     const targetSocketId = getUrlParameter('id');

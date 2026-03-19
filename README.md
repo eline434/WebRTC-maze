@@ -1784,3 +1784,15 @@ function motion(event) {
 })();
 ```
 
+Ik heb de random van de pijltjes er met AI ingezet om tijd te besparen. Ik heb exact gezegd hoe ik het wil zodat ik direct weet hoe het werkte.
+
+promt:
+```javascript
+Can you create an array or object with for each direction for (pitch_deg < -threshold) -->(ArrowUp,ArrowRight,ArrowDown,ArrowLeft), for (pitch_deg > threshold) -->(ArrowDown,ArrowLeft,ArrowUp,ArrowRight), for (roll_deg < -threshold) -->(ArrowRight,ArrowDown,ArrowLeft,ArrowUp), and for (roll_deg > threshold) -->(ArrowLeft,ArrowUp,ArrowRight,ArrowDown), so that when you start, the first one is selected to forward if, for example, if (roll_deg > threshold) satisfies. Then, every 20 seconds, there should be a random one included that pulls another from the list (e.g., all the 2nd ones) and forwards that one in its place.
+```
+
+output:
+Edited sender.js+26-6
+Set up a direction mapping array and a global random index that changes every 20 seconds. The active index decides which direction is sent for each tilt case. Updated in sender.js.
+
+If you want the 20-second switch to be synced with the receiver (so it changes exactly when you press Start), I can move the timer start to the start button press.
