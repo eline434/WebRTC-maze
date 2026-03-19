@@ -2,12 +2,21 @@
  * connection.js – Receiver-side WebRTC (simple-peer) + Socket.IO signalling.
  * Listens for arrow-key commands over the data channel and drives the maze.
  */
-import { makeMaze, movePlayer } from "./maze.js";
+import { makeMaze, movePlayer, resetMaze } from "./maze.js";
 
 const $status = document.getElementById('status');
+const $qr = document.getElementById('qr');
 
 let socket;
 let peer;
+
+function showQr() {
+    if ($qr) $qr.style.display = '';
+}
+
+function hideQr() {
+    if ($qr) $qr.style.display = 'none';
+}
 
 function initConnection() {
     socket = io.connect('/');
@@ -26,6 +35,7 @@ function initConnection() {
         qr.addData(url);
         qr.make();
         document.getElementById('qr').innerHTML = qr.createImgTag(4);
+        showQr();
     });
 
     // Signalling relay from server
@@ -49,14 +59,17 @@ function initConnection() {
             peer.on('connect', () => {
                 console.log('Peer connected!');
                 if ($status) $status.textContent = 'Connected! Sender can control the maze.';
-                // Generate the maze as soon as the peer connects
-                makeMaze();
+                hideQr();
             });
 
             peer.on('data', raw => {
                 // Sender sends JSON messages like { type: "move", direction: "ArrowUp" }
                 try {
                     const msg = JSON.parse(raw.toString());
+                    if (msg.type === 'start') {
+                        resetMaze();
+                        makeMaze();
+                    }
                     if (msg.type === 'move') {
                         movePlayer(msg.direction);
                     }
@@ -73,6 +86,8 @@ function initConnection() {
             peer.on('close', () => {
                 console.log('Peer closed');
                 if ($status) $status.textContent = 'Sender disconnected.';
+                showQr();
+                resetMaze();
                 peer = null;
             });
         }

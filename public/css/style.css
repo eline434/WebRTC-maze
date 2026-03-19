@@ -23,37 +23,6 @@ body {
     padding: 20px;
 }
 
-#menu {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-}
-
-#menu select,
-#menu input[type="button"] {
-    padding: 10px 20px;
-    font-size: 1rem;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-}
-
-#menu select {
-    background: #16213e;
-    color: #eee;
-    border: 2px solid #0f3460;
-}
-
-#menu input[type="button"] {
-    background: #e94560;
-    color: #fff;
-    font-weight: 700;
-    transition: background .2s;
-}
-
-#menu input[type="button"]:hover {
-    background: #c73650;
-}
 
 #qr {
     margin: 10px 0;
@@ -110,17 +79,6 @@ body {
     margin: 6px 0;
 }
 
-#okBtn {
-    margin-top: 16px;
-    padding: 10px 30px;
-    background: #e94560;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-}
 
 #roundBody p {
     margin: 6px 0;
@@ -132,12 +90,6 @@ body {
     font-size: 1.1rem;
 }
 
-/* Level indicator */
-#levelIndicator {
-    font-size: 0.95rem;
-    color: #aaa;
-    white-space: nowrap;
-}
 
 /* Level-complete flash */
 #levelComplete {
@@ -200,6 +152,23 @@ body {
     min-height: 1.4em;
 }
 
+.primary-btn {
+    padding: 12px 28px;
+    background: #e94560;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .2s, transform .1s;
+}
+
+.primary-btn:active {
+    background: #c73650;
+    transform: scale(0.98);
+}
+
 .arrow-grid {
     display: grid;
     grid-template-areas:
@@ -210,9 +179,9 @@ body {
 }
 
 .arrow-grid button {
-    width: 80px;
-    height: 80px;
-    font-size: 2rem;
+    width: 100px;
+    height: 100px;
+    font-size: 2.4rem;
     border: none;
     border-radius: 12px;
     background: #0f3460;
@@ -243,12 +212,4 @@ body {
 
 #btnDown {
     grid-area: down;
-}
-
-@media (max-width: 500px) {
-    .arrow-grid button {
-        width: 64px;
-        height: 64px;
-        font-size: 1.5rem;
-    }
 }

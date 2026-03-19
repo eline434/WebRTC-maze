@@ -1469,3 +1469,115 @@ Door nu ook de z-index te gebruiken kan hij het kantelen beter uitvoeren en uitr
 
 Dit werkte redelijk goed, alleen wou ik dat hij toch nog iets minder snel reageerde. Dus heb ik de threshold van 35 graden naar 55 gezet.
 
+## hide qr and reset
+
+Ik wou dat na het connecten van de peer conection dat de qr-code verdeen en dus ook weer verscheen wanneer het disconnecteerde en heb dan direct ook gevraagd om er een refresh op te zetten.
+
+promt:
+```javascript
+Can you make it so that when the connection is established, the QR code disappears, and when the sender disconnects, the QR code reappears and everything resets from the beginning (this means that the screen looks like it did when no one has connected yet, so no maze yet)?
+```
+
+output:
+Made the receiver reset to the initial “waiting for scan” state when the sender disconnects. QR hides on connect, reappears on disconnect, and the maze UI is cleared (no maze, no overlays, level indicator reset).
+
+Changes:
+
+Reset helper added in maze.js:160-198
+QR hide/show + reset on disconnect in connection.js:6-84
+If you want the status text to switch back to “Waiting for sender to scan QR code…” immediately on disconnect, I can adjust that too.
+
+Hier bij werkte het wel goed om de qr-code te doen verdwijnen. Dit was ook een een simple manier gedaan door de display style aan te passen wanneer peer.on connect binnen komt en zo ook terug verschijnt wanneer peer.on close voor de disconect.
+
+De peer.on close krijgt hij gewoon wat later door waardoor het langer duurt maar dit werkt ook! 
+De maze reset werkt op ook met peer.on close voor de disconect om te restarten. Het zet zichzelf ook onzichtbaar door de class visible weg te doen en alles in het canvas leeg te zetten.
+
+Zelf heb ik dan de moves weggehaald omdat ik dit eigenlijk niet in het spelletje wil. Dit heb ik gedaan door alles met points te verwijderen en het tekste van moves (je het zoveel moves gedaan).
+
+Ik wou snel al een keer mijn code opschonen en heb dit dan ook aan ai gevraagd om alles te verwijderen dat niet gebruikt wordt, vooral om te zien of ik nog dingen ben vergeten om weg te doen van de points.
+
+promt:
+```javascript
+Can you remove the code that we don't use anymore, if there is some.
+```
+
+output:
+Edited
+maze.js+0-41
+Removed unused maze code (unused state, DFS solver, and legacy helpers) in maze.js.
+
+If you want me to also strip any unused HTML elements or CSS, point me to the file(s) you want trimmed.
+
+Ook heb ik de code voor de levels te bepalen weggehaald omdat ik dat eigenijk niet gebruik. Dat is deze code die ik weg doe:
+
+```javascript
+        <!-- Menu -->
+        <div id="menu">
+            <div class="custom-select">
+                <select id="diffSelect">
+                    <option value="10">Easy</option>
+                    <option value="15">Medium</option>
+                    <option value="25">Hard</option>
+                    <option value="38">Extreme</option>
+                </select>
+            </div>
+            <input id="startMazeBtn" type="button" onclick="makeMaze()" value="New Maze" />
+            <span id="levelIndicator"></span>
+        </div>
+```
+Dan heb ik aan AI weer gevraagd om de js en css code weg te doen die alleen met dat had te maken.
+
+promt:
+```javascript
+Do you want to remove all js code and css code that was only used for: <div id="menu">
+<div class="custom-select">
+<select id="diffSelect">
+<option value="10">Easy</option>
+<option value="15">Medium</option>
+<option value="25">Hard</option>
+<option value="38">Extreme</option>
+</select>
+</div>
+<input id="startMazeBtn" type="button" onclick="makeMaze()" value="New Maze" />
+<span id="levelIndicator"></span>
+</div>
+```
+
+output:
+Removed the menu-only JS/CSS now that the menu markup is gone.
+
+JS cleanup in maze.js
+CSS cleanup in style.css
+If you also want the level system itself removed (3 levels + timing), say the word and I’ll strip that too.
+
+Nu wou ik dat je start aanroept op de gsm ipv op de index.
+
+promt:
+```javascript
+Would you like to put a button on the transmitter that starts the game only when you press it, and that also allows you to restart? The restart button on the index can also be removed.
+```
+output:
+Added a Start/Restart button on the sender that controls when the maze begins, and removed the receiver’s restart button.
+
+What changed:
+
+Sender now sends a start message; receiver starts/reset the maze only on that signal: sender.html, connection.js
+Receiver overlay button removed: index.html
+Restart button logic removed from maze code: maze.js
+Styles updated for the sender button; old overlay button styles removed: style.css
+If you want the status text to say “Press Start on the controller” after connect, I can add that.
+
+De code die eerst automatisch de maze triggerde zit nu achter een button die op de sender staat.
+
+Dan heb ik nog in de css de knoppen op de sender groter gezet.
+
+```javascript
+button {
+    width: 100px;
+    height: 100px;
+}
+```
+
+Ook zag ik dat ik een media querie had en heb die verwijderd.
+
+## draaiende pijltjes
