@@ -1580,4 +1580,13 @@ button {
 
 Ook zag ik dat ik een media querie had en heb die verwijderd.
 
+
+# planning
+- draaiende pijltjes per aantal sec er insteken
+- score bord op het einde
+
+Nog tijd over?:
+- optie om met 2 te spelen
+- als je normaal zegt dat je pijltjes weer normaal gaan staan
+
 ## draaiende pijltjes
