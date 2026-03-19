@@ -1580,3 +1580,4 @@ button {
 
 Ook zag ik dat ik een media querie had en heb die verwijderd.
 
+## draaiende pijltjes
