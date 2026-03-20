@@ -1254,6 +1254,8 @@ zelf:
 - bewegen ook via gyroscoop laten gaan
 - om zoveel seconden de richting doen veranderen en dat moeilijker per level maken
 
+# week 4
+
 ## gyroscoop
 
 Online heb ik gezocht voor een voorbeeld hiervan en kwam uit op deze code:
@@ -1580,4 +1582,400 @@ button {
 
 Ook zag ik dat ik een media querie had en heb die verwijderd.
 
+
+## planning
+- draaiende pijltjes per aantal sec er insteken
+- score bord op het einde
+
+Nog tijd over?:
+- optie om met 2 te spelen
+- als je normaal zegt dat je pijltjes weer normaal gaan staan
+
+## consult
+- pijltjes mogen weg, hebben nu geen nut meer omdat je de gyroscoop hebt.
+- js van sender in een .js file zetten
+
 ## draaiende pijltjes
+
+--> Door consult heb ik eerst de pijltjes verwijderd. Deze code heb ik verwijderd:
+
+HTML:
+```javascript
+
+        <div class="arrow-grid">
+            <button id="btnUp">&#9650;</button>
+            <button id="btnLeft">&#9664;</button>
+            <button id="btnRight">&#9654;</button>
+            <button id="btnDown">&#9660;</button>
+        </div>
+
+```
+
+JS:
+```javascript
+document.getElementById('btnUp').addEventListener('click', () => sendMove('ArrowUp'));
+        document.getElementById('btnDown').addEventListener('click', () => sendMove('ArrowDown'));
+        document.getElementById('btnLeft').addEventListener('click', () => sendMove('ArrowLeft'));
+        document.getElementById('btnRight').addEventListener('click', () => sendMove('ArrowRight'));
+
+        document.addEventListener('keydown', e => {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault();
+                sendMove(e.key);
+
+                // Visual feedback on the matching button
+                const btnMap = { ArrowUp: 'btnUp', ArrowDown: 'btnDown', ArrowLeft: 'btnLeft', ArrowRight: 'btnRight' };
+                const btn = document.getElementById(btnMap[e.key]);
+                if (btn) {
+                    btn.classList.add('active');
+                    setTimeout(() => btn.classList.remove('active'), 120);
+                }
+            }
+        });
+```
+
+CSS:
+```javascript
+
+.arrow-grid {
+    display: grid;
+    grid-template-areas:
+        ". up ."
+        "left . right"
+        ". down .";
+    gap: 10px;
+}
+
+.arrow-grid button {
+    width: 100px;
+    height: 100px;
+    font-size: 2.4rem;
+    border: none;
+    border-radius: 12px;
+    background: #0f3460;
+    color: #eee;
+    cursor: pointer;
+    transition: background .15s, transform .1s;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.arrow-grid button:active,
+.arrow-grid button.active {
+    background: #e94560;
+    transform: scale(0.93);
+}
+```
+
+--> Dan alle js code van sender.html in een .js file zetten.
+
+in sender.html:
+```javascript
+<script type="module" src="/js/sender.js"></script>
+```
+
+in nieuwe file sender.js in het js mapje:
+```javascript
+const $status = document.getElementById('sender-status');
+let socket;
+let peer;
+let connected = false;
+
+/* ── Send a direction over the data channel ── */
+function sendMove(direction) {
+    if (!peer || !connected) return;
+    peer.send(JSON.stringify({ type: 'move', direction }));
+}
+
+function sendControl(type) {
+    if (!peer || !connected) return;
+    peer.send(JSON.stringify({ type }));
+}
+
+document.getElementById('startBtn').addEventListener('click', () => sendControl('start'));
+
+document.querySelectorAll('.arrow-grid button').forEach(btn => {
+    btn.addEventListener('touchstart', e => { e.preventDefault(); btn.click(); }, { passive: false });
+});
+
+/* ── Read target id from query string ── */
+function getUrlParameter(name) {
+    const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+    const results = regex.exec(location.search);
+    return results === null ? false : decodeURIComponent(results[1].replace(/\+/g, ' '));
+}
+
+function motion(event) {
+    var left_right = event.accelerationIncludingGravity.x;
+    var top_bottom = event.accelerationIncludingGravity.y;
+    var front_back = event.accelerationIncludingGravity.z;
+
+    var pitch_deg = Math.atan2(top_bottom, front_back) * (180 / Math.PI);
+    var roll_deg = Math.atan2(left_right, front_back) * (180 / Math.PI);
+    var threshold = 55;
+
+    if (pitch_deg < -threshold) {
+        sendMove('ArrowUp')
+    }
+    if (pitch_deg > threshold) {
+        sendMove('ArrowDown')
+    }
+    if (roll_deg < -threshold) {
+        sendMove('ArrowRight')
+    }
+    if (roll_deg > threshold) {
+        sendMove('ArrowLeft')
+    }
+}
+
+(function init() {
+    const targetSocketId = getUrlParameter('id');
+    if (!targetSocketId) {
+        $status.textContent = 'Missing target ID in URL.';
+        return;
+    }
+
+    socket = io.connect('/');
+
+    socket.on('connect', () => {
+        console.log('Socket connected:', socket.id);
+        $status.textContent = 'Signalling…';
+
+        // Create initiator peer – data only, no streams
+        peer = new SimplePeer({
+            initiator: true,
+            trickle: true,
+            config: {
+                iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+            }
+        });
+
+        peer.on('signal', signalData => {
+            socket.emit('signal', targetSocketId, signalData);
+        });
+
+        peer.on('connect', () => {
+            console.log('Peer connected!');
+            connected = true;
+            $status.textContent = 'Connected! Use the arrows to move.';
+        });
+
+        peer.on('error', err => {
+            console.error('Peer error:', err);
+            $status.textContent = 'Connection error – reload to retry.';
+        });
+
+        peer.on('close', () => {
+            connected = false;
+            $status.textContent = 'Disconnected.';
+        });
+    });
+
+    // Relay signals from receiver
+    socket.on('signal', (fromId, signalData) => {
+        console.log('Received signal from', fromId);
+        if (peer) peer.signal(signalData);
+    });
+
+    if (window.DeviceMotionEvent) {
+        window.addEventListener("devicemotion", motion, false);
+    }
+    else {
+        alert('Tilt is not supported on your current device. Try this page on your mobile device?');
+    }
+})();
+```
+
+Ik heb de random van de pijltjes er met AI ingezet om tijd te besparen. Ik heb exact gezegd hoe ik het wil zodat ik direct weet hoe het werkte.
+
+promt:
+```javascript
+Can you create an array or object with for each direction for (pitch_deg < -threshold) -->(ArrowUp,ArrowRight,ArrowDown,ArrowLeft), for (pitch_deg > threshold) -->(ArrowDown,ArrowLeft,ArrowUp,ArrowRight), for (roll_deg < -threshold) -->(ArrowRight,ArrowDown,ArrowLeft,ArrowUp), and for (roll_deg > threshold) -->(ArrowLeft,ArrowUp,ArrowRight,ArrowDown), so that when you start, the first one is selected to forward if, for example, if (roll_deg > threshold) satisfies. Then, every 20 seconds, there should be a random one included that pulls another from the list (e.g., all the 2nd ones) and forwards that one in its place.
+```
+
+output:
+Edited sender.js+26-6
+Set up a direction mapping array and a global random index that changes every 20 seconds. The active index decides which direction is sent for each tilt case. Updated in sender.js.
+
+If you want the 20-second switch to be synced with the receiver (so it changes exactly when you press Start), I can move the timer start to the start button press.
+
+
+Ik heb dan gemaakt dat de timer pas start als de maze start dus heb ik dit gedaan:
+
+```javascript
+let activeIndex = 0;
+```
+--> Heb ik vanboven geplaatst bij de andere variabelen.
+
+De interval (20sec) heb ik bij de start button gezet zodat deze pas begint als ook de maze begint en heb ik gemaakt dat de index altijd weer 0 is en de pijltjes dus weer goed staan voor het nieuwe spel die start.
+
+```javascript
+document.getElementById('startBtn').addEventListener('click', () => {
+    sendControl('start');
+    activeIndex = 0;
+    setInterval(pickRandomIndex, 20000);
+});
+```
+
+Hierdoor zou de pickRandomIndex maar 1 keer worden aangeroepen na de click dus moet dit zoizo veranderd worden, ook wou ik dat het meer random was heb ik dat ook toegevoegd.
+
+Eerst heb ik een nieuwe functie gemaakt om de tijd te randomizen tussen 10 en 20 seconden.
+
+```javascript
+function pickRandomDelay(min = 10, max = 20) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+```
+
+En ook een nieuwe fuctie om de countdown te starten zodat deze elke keer na het uitvoeren er van weer opnieuw aangeroepen wordt.
+
+```javascript
+document.getElementById('startBtn').addEventListener('click', () => {
+    sendControl('start');
+    activeIndex = 0;
+    startcountdown();
+});
+
+function startcountdown() {
+    setInterval(pickRandomIndex, pickRandomDelay());
+}
+```
+
+Om hem dan weer opnieuw te starten voor de countdown heb ik de fuctie opnieuw gezet in de pickRandomIndex omdat dit pas triggert wanneer de countdown klaar is en zo ook direct weer opnieuw kan beginnen.
+
+```javascript
+function pickRandomIndex() {
+    activeIndex = Math.floor(Math.random() * 4);
+    startcountdown();
+}
+```
+
+Nu moet er daar een if state rond om te kijken of het spelletje nog bezig is. Dit heb ik aan Ai gevraagd.
+
+promt:
+```javascript
+Can you put an if state around this that checks whether the game you started is still running or not? So that when you start a new game, you don't have 2 (or more) timers running at the same time.
+```
+
+output:
+Added a single-run timer guard so you don’t stack multiple countdowns when starting a new game. Also fixed the random delay range calculation. See sender.js.
+
+If you want the timer to stop automatically when the peer disconnects, I can hook that into the peer.on('close') handler.
+
+```javascript
+function startcountdown() {
+    if (countdownRunning) return;
+    countdownRunning = true;
+    scheduleNextPick();
+}
+
+function scheduleNextPick() {
+    const delayMs = pickRandomDelay() * 1000;
+    countdownId = setTimeout(() => {
+        pickRandomIndex();
+        if (countdownRunning) scheduleNextPick();
+    }, delayMs);
+}
+
+function stopCountdown() {
+    countdownRunning = false;
+    if (countdownId !== null) {
+        clearTimeout(countdownId);
+        countdownId = null;
+    }
+}
+```
+
+De countdown zit nu in een apparte funtie waarin hij kijkt of de countdown nog bezig is en als die niet meer bezig is kijkt die of er nog een nieuwe countdown moet komen. Samen ook met een variabele die aangeeft of de countdown nog aan het runnen is.
+
+Natuurlijk heb je nu als bestuurder niet echt door wanneer die gebeurt en waarom dus heb ik nog gevraagd om een trilling door te sturen wanneer de richtingen veranderen (en een geluidje voor apple producten). 
+
+promt:
+```javascript
+Can you add a vibration when the countdown is finished so the user knows something has happened? For Apple, or if the vibration doesn't work, you can provide a sound.
+```
+
+output:
+Added haptic feedback at each countdown completion, with an audio beep fallback for devices where vibration is unavailable (like many iPhones). Updated in sender.js.
+
+If you want a different vibration pattern or a softer/longer beep, tell me the timing you want.
+
+```javascript
+function notifyCountdown() {
+    let didVibrate = false;
+    if (navigator.vibrate) {
+        didVibrate = navigator.vibrate([80, 40, 80]);
+    }
+    if (!didVibrate) {
+        playBeep();
+    }
+}
+
+function playBeep() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 880;
+        gain.gain.value = 0.0001;
+        gain.gain.exponentialRampToValueAtTime(0.2, audioCtx.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.22);
+    } catch (e) {
+        return;
+    }
+}
+```
+
+## score board
+
+De score bord werkte nog niet dus heb ik aan AI gezegt hoe ik het zou doen.
+
+promt:
+```javascript
+Can you make a variable generated that stores the fastest time already achieved? This would then override the time of the just completed lap. Because this is currently not working.
+```
+
+output:
+Added a dedicated fastestTime and made the overlay show that as the primary “Total time” when it beats the latest lap. Updated in maze.js.
+
+If you want it to show both “Current time” and “Best time” (instead of overriding), I can switch the display back to two separate values.
+
+```javascript
+function showRoundComplete(elapsed) {
+    const overlay = document.getElementById('Message-Container');
+    const $title = document.querySelector('#message h1');
+    const $body = document.getElementById('roundBody');
+
+    if (fastestTime === null || elapsed < fastestTime) {
+        fastestTime = elapsed;
+    }
+
+    const displayTime = fastestTime;
+    const fmt = formatTime(displayTime);
+
+    let html = `<p>Total time: <strong>${fmt}</strong></p>`;
+
+    if (fastestTime !== null) {
+        html += `<p>Best time: <strong>${formatTime(fastestTime)}</strong></p>`;
+        if (elapsed <= fastestTime) {
+            html += `<p class="new-best">New best!</p>`;
+        }
+    }
+
+    if ($title) $title.textContent = 'Round Complete!';
+    if ($body) $body.innerHTML = html;
+    if (overlay) overlay.classList.add('visible');
+}
+```
+
+Dit werkte niet. Bleek dat de fastestTime telkens op 0 werd gezet dus heb ik dit verwijderd.
+

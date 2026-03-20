@@ -51,6 +51,7 @@ function initConnection() {
                     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
                 }
             });
+            peer.id = fromId;
 
             peer.on('signal', data => {
                 socket.emit('signal', fromId, data);
@@ -85,6 +86,7 @@ function initConnection() {
 
             peer.on('close', () => {
                 console.log('Peer closed');
+                peer.destroy();
                 if ($status) $status.textContent = 'Sender disconnected.';
                 showQr();
                 resetMaze();
@@ -93,6 +95,12 @@ function initConnection() {
         }
 
         peer.signal(signalData);
+    });
+
+    socket.on('peerDisconnect', peerId => {
+        if (peer && peer.id === peerId) {
+            peer.destroy();
+        }
     });
 }
 
