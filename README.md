@@ -1254,6 +1254,8 @@ zelf:
 - bewegen ook via gyroscoop laten gaan
 - om zoveel seconden de richting doen veranderen en dat moeilijker per level maken
 
+# week 4
+
 ## gyroscoop
 
 Online heb ik gezocht voor een voorbeeld hiervan en kwam uit op deze code:
@@ -1581,7 +1583,7 @@ button {
 Ook zag ik dat ik een media querie had en heb die verwijderd.
 
 
-# planning
+## planning
 - draaiende pijltjes per aantal sec er insteken
 - score bord op het einde
 
@@ -1589,7 +1591,7 @@ Nog tijd over?:
 - optie om met 2 te spelen
 - als je normaal zegt dat je pijltjes weer normaal gaan staan
 
-# consult
+## consult
 - pijltjes mogen weg, hebben nu geen nut meer omdat je de gyroscoop hebt.
 - js van sender in een .js file zetten
 
@@ -1932,4 +1934,48 @@ function playBeep() {
     }
 }
 ```
+
+## score board
+
+De score bord werkte nog niet dus heb ik aan AI gezegt hoe ik het zou doen.
+
+promt:
+```javascript
+Can you make a variable generated that stores the fastest time already achieved? This would then override the time of the just completed lap. Because this is currently not working.
+```
+
+output:
+Added a dedicated fastestTime and made the overlay show that as the primary “Total time” when it beats the latest lap. Updated in maze.js.
+
+If you want it to show both “Current time” and “Best time” (instead of overriding), I can switch the display back to two separate values.
+
+```javascript
+function showRoundComplete(elapsed) {
+    const overlay = document.getElementById('Message-Container');
+    const $title = document.querySelector('#message h1');
+    const $body = document.getElementById('roundBody');
+
+    if (fastestTime === null || elapsed < fastestTime) {
+        fastestTime = elapsed;
+    }
+
+    const displayTime = fastestTime;
+    const fmt = formatTime(displayTime);
+
+    let html = `<p>Total time: <strong>${fmt}</strong></p>`;
+
+    if (fastestTime !== null) {
+        html += `<p>Best time: <strong>${formatTime(fastestTime)}</strong></p>`;
+        if (elapsed <= fastestTime) {
+            html += `<p class="new-best">New best!</p>`;
+        }
+    }
+
+    if ($title) $title.textContent = 'Round Complete!';
+    if ($body) $body.innerHTML = html;
+    if (overlay) overlay.classList.add('visible');
+}
+```
+
+Dit werkte niet. Bleek dat de fastestTime telkens op 0 werd gezet dus heb ik dit verwijderd.
 

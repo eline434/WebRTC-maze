@@ -19,7 +19,7 @@ const DEFAULT_DIFFICULTY = 10;
 let currentLevel = 0;          // 0-based, incremented before each maze
 let baseDifficulty = DEFAULT_DIFFICULTY;
 let roundStartTime = null;       // Date.now() when round begins
-let bestTime = null;       // best round time in ms (persists across rounds)
+let fastestTime = null;       // fastest round time in ms (persists across rounds)
 
 /* ── Cell class ── */
 class Cell {
@@ -128,7 +128,6 @@ export function resetMaze() {
     currentLevel = 0;
     baseDifficulty = DEFAULT_DIFFICULTY;
     roundStartTime = null;
-    bestTime = null;
 
     pen.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -224,23 +223,22 @@ function hideLevelComplete() {
 
 /* ── Round-complete overlay ── */
 function showRoundComplete(elapsed) {
-    const fmt = formatTime(elapsed);
     const overlay = document.getElementById('Message-Container');
     const $title = document.querySelector('#message h1');
     const $body = document.getElementById('roundBody');
 
-    let html = `<p>Total time: <strong>${fmt}</strong></p>`;
-
-    if (bestTime !== null) {
-        html += `<p>Best time: <strong>${formatTime(bestTime)}</strong></p>`;
-        if (elapsed < bestTime) {
-            html += `<p class="new-best">New best!</p>`;
-        }
+    const isNewBest = fastestTime === null || elapsed < fastestTime;
+    if (isNewBest) {
+        fastestTime = elapsed;
     }
 
-    // Update best time
-    if (bestTime === null || elapsed < bestTime) {
-        bestTime = elapsed;
+    let html = `<p>Total time: <strong>${formatTime(elapsed)}</strong></p>`;
+
+    if (fastestTime !== null) {
+        html += `<p>Best time: <strong>${formatTime(fastestTime)}</strong></p>`;
+        if (isNewBest) {
+            html += `<p class="new-best">New best!</p>`;
+        }
     }
 
     if ($title) $title.textContent = 'Round Complete!';
