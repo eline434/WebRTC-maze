@@ -2,6 +2,10 @@ const $status = document.getElementById('sender-status');
 let socket;
 let peer;
 let connected = false;
+let activeIndex = 0;
+let countdownId = null;
+let countdownRunning = false;
+let audioCtx = null;
 
 /* ── Send a direction over the data channel ── */
 function sendMove(direction) {
@@ -14,7 +18,12 @@ function sendControl(type) {
     peer.send(JSON.stringify({ type }));
 }
 
-document.getElementById('startBtn').addEventListener('click', () => sendControl('start'));
+document.getElementById('startBtn').addEventListener('click', () => {
+    sendControl('start');
+    activeIndex = 0;
+    stopCountdown();
+    startcountdown();
+});
 
 document.querySelectorAll('.arrow-grid button').forEach(btn => {
     btn.addEventListener('touchstart', e => { e.preventDefault(); btn.click(); }, { passive: false });
@@ -57,18 +66,74 @@ const directionMap = {
     rollRight: ['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown']
 };
 
-let activeIndex = 0;
-
 function getMappedDirection(key) {
     const list = directionMap[key];
     return list ? list[activeIndex] : null;
+}
+
+function startcountdown() {
+    if (countdownRunning) return;
+    countdownRunning = true;
+    scheduleNextPick();
+}
+
+function pickRandomDelay(min = 10, max = 20) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function scheduleNextPick() {
+    const delayMs = pickRandomDelay() * 1000;
+    countdownId = setTimeout(() => {
+        pickRandomIndex();
+        notifyCountdown();
+        if (countdownRunning) scheduleNextPick();
+    }, delayMs);
+}
+
+function stopCountdown() {
+    countdownRunning = false;
+    if (countdownId !== null) {
+        clearTimeout(countdownId);
+        countdownId = null;
+    }
 }
 
 function pickRandomIndex() {
     activeIndex = Math.floor(Math.random() * 4);
 }
 
-setInterval(pickRandomIndex, 20000);
+function notifyCountdown() {
+    let didVibrate = false;
+    if (navigator.vibrate) {
+        didVibrate = navigator.vibrate([80, 40, 80]);
+    }
+    if (!didVibrate) {
+        playBeep();
+    }
+}
+
+function playBeep() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 880;
+        gain.gain.value = 0.0001;
+        gain.gain.exponentialRampToValueAtTime(0.2, audioCtx.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.22);
+    } catch (e) {
+        return;
+    }
+}
 
 (function init() {
     const targetSocketId = getUrlParameter('id');

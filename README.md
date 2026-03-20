@@ -1796,3 +1796,140 @@ Edited sender.js+26-6
 Set up a direction mapping array and a global random index that changes every 20 seconds. The active index decides which direction is sent for each tilt case. Updated in sender.js.
 
 If you want the 20-second switch to be synced with the receiver (so it changes exactly when you press Start), I can move the timer start to the start button press.
+
+
+Ik heb dan gemaakt dat de timer pas start als de maze start dus heb ik dit gedaan:
+
+```javascript
+let activeIndex = 0;
+```
+--> Heb ik vanboven geplaatst bij de andere variabelen.
+
+De interval (20sec) heb ik bij de start button gezet zodat deze pas begint als ook de maze begint en heb ik gemaakt dat de index altijd weer 0 is en de pijltjes dus weer goed staan voor het nieuwe spel die start.
+
+```javascript
+document.getElementById('startBtn').addEventListener('click', () => {
+    sendControl('start');
+    activeIndex = 0;
+    setInterval(pickRandomIndex, 20000);
+});
+```
+
+Hierdoor zou de pickRandomIndex maar 1 keer worden aangeroepen na de click dus moet dit zoizo veranderd worden, ook wou ik dat het meer random was heb ik dat ook toegevoegd.
+
+Eerst heb ik een nieuwe functie gemaakt om de tijd te randomizen tussen 10 en 20 seconden.
+
+```javascript
+function pickRandomDelay(min = 10, max = 20) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+```
+
+En ook een nieuwe fuctie om de countdown te starten zodat deze elke keer na het uitvoeren er van weer opnieuw aangeroepen wordt.
+
+```javascript
+document.getElementById('startBtn').addEventListener('click', () => {
+    sendControl('start');
+    activeIndex = 0;
+    startcountdown();
+});
+
+function startcountdown() {
+    setInterval(pickRandomIndex, pickRandomDelay());
+}
+```
+
+Om hem dan weer opnieuw te starten voor de countdown heb ik de fuctie opnieuw gezet in de pickRandomIndex omdat dit pas triggert wanneer de countdown klaar is en zo ook direct weer opnieuw kan beginnen.
+
+```javascript
+function pickRandomIndex() {
+    activeIndex = Math.floor(Math.random() * 4);
+    startcountdown();
+}
+```
+
+Nu moet er daar een if state rond om te kijken of het spelletje nog bezig is. Dit heb ik aan Ai gevraagd.
+
+promt:
+```javascript
+Can you put an if state around this that checks whether the game you started is still running or not? So that when you start a new game, you don't have 2 (or more) timers running at the same time.
+```
+
+output:
+Added a single-run timer guard so you don’t stack multiple countdowns when starting a new game. Also fixed the random delay range calculation. See sender.js.
+
+If you want the timer to stop automatically when the peer disconnects, I can hook that into the peer.on('close') handler.
+
+```javascript
+function startcountdown() {
+    if (countdownRunning) return;
+    countdownRunning = true;
+    scheduleNextPick();
+}
+
+function scheduleNextPick() {
+    const delayMs = pickRandomDelay() * 1000;
+    countdownId = setTimeout(() => {
+        pickRandomIndex();
+        if (countdownRunning) scheduleNextPick();
+    }, delayMs);
+}
+
+function stopCountdown() {
+    countdownRunning = false;
+    if (countdownId !== null) {
+        clearTimeout(countdownId);
+        countdownId = null;
+    }
+}
+```
+
+De countdown zit nu in een apparte funtie waarin hij kijkt of de countdown nog bezig is en als die niet meer bezig is kijkt die of er nog een nieuwe countdown moet komen. Samen ook met een variabele die aangeeft of de countdown nog aan het runnen is.
+
+Natuurlijk heb je nu als bestuurder niet echt door wanneer die gebeurt en waarom dus heb ik nog gevraagd om een trilling door te sturen wanneer de richtingen veranderen (en een geluidje voor apple producten). 
+
+promt:
+```javascript
+Can you add a vibration when the countdown is finished so the user knows something has happened? For Apple, or if the vibration doesn't work, you can provide a sound.
+```
+
+output:
+Added haptic feedback at each countdown completion, with an audio beep fallback for devices where vibration is unavailable (like many iPhones). Updated in sender.js.
+
+If you want a different vibration pattern or a softer/longer beep, tell me the timing you want.
+
+```javascript
+function notifyCountdown() {
+    let didVibrate = false;
+    if (navigator.vibrate) {
+        didVibrate = navigator.vibrate([80, 40, 80]);
+    }
+    if (!didVibrate) {
+        playBeep();
+    }
+}
+
+function playBeep() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 880;
+        gain.gain.value = 0.0001;
+        gain.gain.exponentialRampToValueAtTime(0.2, audioCtx.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.22);
+    } catch (e) {
+        return;
+    }
+}
+```
+
