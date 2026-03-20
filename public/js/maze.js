@@ -253,4 +253,3 @@ function formatTime(ms) {
     const secs = (totalSec % 60).toFixed(1);
     return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
 }
-

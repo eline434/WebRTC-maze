@@ -164,7 +164,7 @@ function playBeep() {
         peer.on('connect', () => {
             console.log('Peer connected!');
             connected = true;
-            $status.textContent = 'Connected! Use the arrows to move.';
+            $status.textContent = 'Connected! Tilt your phone to move. When your phone vibrates, the directions can change.';
         });
 
         peer.on('error', err => {
