@@ -1,4 +1,5 @@
 const $status = document.getElementById('sender-status');
+const $startBtn = document.getElementById('startBtn');
 let socket;
 let peer;
 let connected = false;
@@ -6,6 +7,10 @@ let activeIndex = 0;
 let countdownId = null;
 let countdownRunning = false;
 let audioCtx = null;
+let mode = 'solo';
+let playerIndex = null;
+let localReady = false;
+let raceRunning = false;
 
 /* ── Send a direction over the data channel ── */
 function sendMove(direction) {
@@ -19,10 +24,26 @@ function sendControl(type) {
 }
 
 document.getElementById('startBtn').addEventListener('click', () => {
-    sendControl('start');
-    activeIndex = 0;
-    stopCountdown();
-    startcountdown();
+    if (!connected) return;
+
+    if (mode === 'solo') {
+        sendControl('start');
+        activeIndex = 0;
+        stopCountdown();
+        startcountdown();
+        $status.textContent = 'Solo game started. Tilt your phone to move.';
+        return;
+    }
+
+    if (mode === 'duo' && !localReady) {
+        localReady = true;
+        raceRunning = false;
+        stopCountdown();
+        sendControl('ready');
+        $startBtn.disabled = true;
+        $startBtn.textContent = 'Ready!';
+        $status.textContent = 'You are ready. Waiting for the other player...';
+    }
 });
 
 document.querySelectorAll('.arrow-grid button').forEach(btn => {
@@ -34,6 +55,14 @@ function getUrlParameter(name) {
     const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
     const results = regex.exec(location.search);
     return results === null ? false : decodeURIComponent(results[1].replace(/\+/g, ' '));
+}
+
+function updateStartButtonForMode() {
+    if (mode === 'duo') {
+        $startBtn.textContent = 'Ready';
+        return;
+    }
+    $startBtn.textContent = 'Start / Restart';
 }
 
 function motion(event) {
@@ -137,6 +166,12 @@ function playBeep() {
 
 (function init() {
     const targetSocketId = getUrlParameter('id');
+    const modeParam = getUrlParameter('mode');
+    if (modeParam === 'duo' || modeParam === 'solo') {
+        mode = modeParam;
+    }
+    updateStartButtonForMode();
+
     if (!targetSocketId) {
         $status.textContent = 'Missing target ID in URL.';
         return;
@@ -164,7 +199,56 @@ function playBeep() {
         peer.on('connect', () => {
             console.log('Peer connected!');
             connected = true;
-            $status.textContent = 'Connected! Tilt your phone to move. When your phone vibrates, the directions can change.';
+            if (mode === 'duo') {
+                $status.textContent = 'Connected! Waiting for player assignment...';
+            } else {
+                $status.textContent = 'Connected! Tilt your phone to move. When your phone vibrates, the directions can change.';
+            }
+        });
+
+        peer.on('data', raw => {
+            try {
+                const msg = JSON.parse(raw.toString());
+
+                if (msg.type === 'duoAssigned') {
+                    playerIndex = msg.playerIndex;
+                    const label = playerIndex !== null ? playerIndex + 1 : '?';
+                    $status.textContent = `Connected as Player ${label}. Press Ready to enter the race.`;
+                    return;
+                }
+
+                if (msg.type === 'readyState' && mode === 'duo') {
+                    $status.textContent = `Lobby ready: ${msg.readyCount}/${msg.total}.`;
+                    return;
+                }
+
+                if (msg.type === 'raceStart' && mode === 'duo') {
+                    localReady = false;
+                    raceRunning = true;
+                    activeIndex = 0;
+                    $startBtn.disabled = false;
+                    $startBtn.textContent = 'Ready';
+                    $status.textContent = 'Race started! Tilt your phone now.';
+                    stopCountdown();
+                    startcountdown();
+                    return;
+                }
+
+                if (msg.type === 'raceFinished' && mode === 'duo') {
+                    raceRunning = false;
+                    localReady = false;
+                    stopCountdown();
+                    $startBtn.disabled = false;
+                    $startBtn.textContent = 'Ready';
+                    const iWon = playerIndex !== null && msg.winnerIndex === playerIndex;
+                    $status.textContent = iWon
+                        ? 'You won! Press Ready to race again.'
+                        : `Player ${msg.winnerIndex + 1} won. Press Ready to race again.`;
+                    return;
+                }
+            } catch (e) {
+                console.warn('Bad receiver data:', e);
+            }
         });
 
         peer.on('error', err => {
@@ -174,6 +258,9 @@ function playBeep() {
 
         peer.on('close', () => {
             connected = false;
+            raceRunning = false;
+            localReady = false;
+            stopCountdown();
             $status.textContent = 'Disconnected.';
         });
     });

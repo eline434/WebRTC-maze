@@ -8,9 +8,15 @@ let cells = [];
 let generatedMaze = [];
 let trail = [];
 let mazeReady = false;
+let gameMode = 'solo';
+let raceStartTime = null;
 
 const player = { x: 0, y: 0, color: '#e94560' };
 const finish = { color: '#53d769' };
+const racePlayers = [
+    { x: 0, y: 0, color: '#e94560', trail: [] },
+    { x: 0, y: 0, color: '#4dc3ff', trail: [] }
+];
 
 /* ── Round / level progression ── */
 const MAX_LEVELS = 3;
@@ -20,6 +26,7 @@ let currentLevel = 0;          // 0-based, incremented before each maze
 let baseDifficulty = DEFAULT_DIFFICULTY;
 let roundStartTime = null;       // Date.now() when round begins
 let fastestTime = null;       // fastest round time in ms (persists across rounds)
+const LEVEL_THREE_SIZE = DEFAULT_DIFFICULTY + (MAX_LEVELS - 1) * DIFF_INCREMENT;
 
 /* ── Cell class ── */
 class Cell {
@@ -74,10 +81,27 @@ function carve(x, y) {
 
 /* ── Public: start a brand-new round (3 levels) ── */
 function startRound() {
+    gameMode = 'solo';
     baseDifficulty = DEFAULT_DIFFICULTY;
     currentLevel = 0;
     roundStartTime = Date.now();
     buildMaze(baseDifficulty);
+}
+
+export function startRaceMaze() {
+    gameMode = 'race';
+    currentLevel = MAX_LEVELS - 1;
+    baseDifficulty = DEFAULT_DIFFICULTY;
+    roundStartTime = null;
+    raceStartTime = Date.now();
+
+    racePlayers.forEach((p) => {
+        p.x = 0;
+        p.y = 0;
+        p.trail = [];
+    });
+
+    buildMaze(LEVEL_THREE_SIZE);
 }
 
 /* ── Advance to the next level inside a round ── */
@@ -89,6 +113,12 @@ function nextLevel() {
 
 /* ── Build & display a maze of the given grid size ── */
 function buildMaze(size) {
+    const overlay = document.getElementById('Message-Container');
+    if (overlay) overlay.classList.remove('visible');
+
+    const lc = document.getElementById('levelComplete');
+    if (lc) lc.classList.remove('visible');
+
     cellSize = Math.floor(canvas.width / size);
     cols = size;
     rows = size;
@@ -120,6 +150,7 @@ export function makeMaze() {
 /* ── Public: reset to initial (no maze yet) state ── */
 export function resetMaze() {
     mazeReady = false;
+    gameMode = 'solo';
     cols = 0;
     rows = 0;
     cells = [];
@@ -128,6 +159,12 @@ export function resetMaze() {
     currentLevel = 0;
     baseDifficulty = DEFAULT_DIFFICULTY;
     roundStartTime = null;
+    raceStartTime = null;
+    racePlayers.forEach((p) => {
+        p.x = 0;
+        p.y = 0;
+        p.trail = [];
+    });
 
     pen.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -148,18 +185,33 @@ function drawMaze() {
         for (let y = 0; y < rows; y++)
             cells[x][y].draw();
 
-    // trail
-    if (trail.length) {
-        pen.beginPath();
-        trail.forEach((t, i) => {
-            const tx = t.x * cellSize + cellSize / 2;
-            const ty = t.y * cellSize + cellSize / 2;
-            i === 0 ? pen.moveTo(tx, ty) : pen.lineTo(tx, ty);
+    if (gameMode === 'solo') {
+        if (trail.length) {
+            pen.beginPath();
+            trail.forEach((t, i) => {
+                const tx = t.x * cellSize + cellSize / 2;
+                const ty = t.y * cellSize + cellSize / 2;
+                i === 0 ? pen.moveTo(tx, ty) : pen.lineTo(tx, ty);
+            });
+            pen.strokeStyle = 'rgba(233,69,96,0.35)';
+            pen.lineWidth = 4;
+            pen.lineCap = 'round';
+            pen.stroke();
+        }
+    } else {
+        racePlayers.forEach((p) => {
+            if (!p.trail.length) return;
+            pen.beginPath();
+            p.trail.forEach((t, i) => {
+                const tx = t.x * cellSize + cellSize / 2;
+                const ty = t.y * cellSize + cellSize / 2;
+                i === 0 ? pen.moveTo(tx, ty) : pen.lineTo(tx, ty);
+            });
+            pen.strokeStyle = `${p.color}66`;
+            pen.lineWidth = 4;
+            pen.lineCap = 'round';
+            pen.stroke();
         });
-        pen.strokeStyle = 'rgba(233,69,96,0.35)';
-        pen.lineWidth = 4;
-        pen.lineCap = 'round';
-        pen.stroke();
     }
 
     // finish
@@ -170,18 +222,30 @@ function drawMaze() {
     pen.fillStyle = finish.color;
     pen.fill();
 
-    // player
-    const px = player.x * cellSize + cellSize / 2;
-    const py = player.y * cellSize + cellSize / 2;
-    pen.beginPath();
-    pen.arc(px, py, cellSize / 2 - 6, 0, Math.PI * 2);
-    pen.fillStyle = player.color;
-    pen.fill();
+    if (gameMode === 'solo') {
+        const px = player.x * cellSize + cellSize / 2;
+        const py = player.y * cellSize + cellSize / 2;
+        pen.beginPath();
+        pen.arc(px, py, cellSize / 2 - 6, 0, Math.PI * 2);
+        pen.fillStyle = player.color;
+        pen.fill();
+        return;
+    }
+
+    racePlayers.forEach((p, index) => {
+        const offset = index === 0 ? -5 : 5;
+        const px = p.x * cellSize + cellSize / 2 + offset;
+        const py = p.y * cellSize + cellSize / 2;
+        pen.beginPath();
+        pen.arc(px, py, cellSize / 2 - 8, 0, Math.PI * 2);
+        pen.fillStyle = p.color;
+        pen.fill();
+    });
 }
 
 /* ── Public: move player (called from connection.js) ── */
 export function movePlayer(direction) {
-    if (!mazeReady) return;
+    if (!mazeReady || gameMode !== 'solo') return;
 
     const c = cells[player.x][player.y];
     let moved = false;
@@ -215,6 +279,36 @@ export function movePlayer(direction) {
     }
 }
 
+export function moveRacePlayer(playerIndex, direction) {
+    if (!mazeReady || gameMode !== 'race') return { moved: false, winner: null };
+    if (playerIndex < 0 || playerIndex > 1) return { moved: false, winner: null };
+
+    const runner = racePlayers[playerIndex];
+    const c = cells[runner.x][runner.y];
+    let moved = false;
+
+    switch (direction) {
+        case 'ArrowUp': if (runner.y > 0 && !c.walls.top) { runner.y--; moved = true; } break;
+        case 'ArrowDown': if (runner.y < rows - 1 && !c.walls.bottom) { runner.y++; moved = true; } break;
+        case 'ArrowLeft': if (runner.x > 0 && !c.walls.left) { runner.x--; moved = true; } break;
+        case 'ArrowRight': if (runner.x < cols - 1 && !c.walls.right) { runner.x++; moved = true; } break;
+    }
+
+    if (!moved) return { moved: false, winner: null };
+
+    runner.trail.push({ x: runner.x, y: runner.y });
+    drawMaze();
+
+    if (runner.x === cols - 1 && runner.y === rows - 1) {
+        mazeReady = false;
+        const elapsed = raceStartTime ? Date.now() - raceStartTime : null;
+        showRaceComplete(playerIndex, elapsed);
+        return { moved: true, winner: playerIndex, elapsed };
+    }
+
+    return { moved: true, winner: null };
+}
+
 /* ── Mid-round "level complete" flash ── */
 function hideLevelComplete() {
     const lc = document.getElementById('levelComplete');
@@ -242,6 +336,21 @@ function showRoundComplete(elapsed) {
     }
 
     if ($title) $title.textContent = 'Round Complete!';
+    if ($body) $body.innerHTML = html;
+    if (overlay) overlay.classList.add('visible');
+}
+
+function showRaceComplete(winnerIndex, elapsed) {
+    const overlay = document.getElementById('Message-Container');
+    const $title = document.querySelector('#message h1');
+    const $body = document.getElementById('roundBody');
+
+    let html = `<p><strong>Player ${winnerIndex + 1}</strong> reached the finish first.</p>`;
+    if (elapsed !== null) {
+        html += `<p>Winning time: <strong>${formatTime(elapsed)}</strong></p>`;
+    }
+
+    if ($title) $title.textContent = 'Race Finished!';
     if ($body) $body.innerHTML = html;
     if (overlay) overlay.classList.add('visible');
 }
