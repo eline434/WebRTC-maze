@@ -2171,3 +2171,5 @@ Dus ik had waarschijnlijk eerst weer een wifi probleem waardoor de connectie nie
 Omdat ik ook niet meer zeker was omdat dit belangrijk was heb ik aan ai gevraagd om alles ervan samen te vatten.
 
 Zelf weet ik wel dat nu mijn originele code achter de knop zit om solo te spelen. Dan is er een nieuwe code gemaakt die veel hergebruikt van de originele waarbij alleen level 3 gebruikt wordt en de start knop moet nu 2 conformaties ontvangen voor hij start. De qr-code wordt ook nog op die manier verborgen maar wordt nu ook pas getoont wannneer je een keuze hebt gemaakt van solo of met 2.
+
+Bij de race mode (met 2) wordt er wanneer en 1 iemand finished het spel stop gezet zoals er bij de solo mode een scherm komt en het stop zet.
