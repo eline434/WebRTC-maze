@@ -1979,3 +1979,197 @@ function showRoundComplete(elapsed) {
 
 Dit werkte niet. Bleek dat de fastestTime telkens op 0 werd gezet dus heb ik dit verwijderd.
 
+## extra
+
+promt:
+```javascript
+Can you make it possible to connect with two people, where you are both in the same level 3 maze and have to race against each other to the end as quickly as possible? The direction rotation must remain in the two-player mode. So, essentially, there would be a button at the beginning to indicate whether you want to play with two or alone. If you choose to play alone, you would land on the screen we have now, where you can start a game (with the 3 levels). If you choose to play with two, the QR code reappears until someone else connects, at which point you also get a start button. Once both have pressed the start button, you get a level 3 maze, and the first one to reach the end is the winner.
+```
+
+output:
+
+I’ll inspect the current game and connection flow first, then I’ll implement a mode selector (solo vs two-player), add matchmaking/start synchronization for two-player, and enforce a level-3 race with rotation preserved and winner detection for both players.
+
+I’ve confirmed the receiver page structure; next I’m reading the connection and maze scripts to wire in two-player race logic without breaking the existing solo flow.
+
+I’ve mapped the current flow: one receiver + one sender over WebRTC with start/move messages and rotation logic in the sender. Next I’m checking the server relay and styles, then I’ll patch both receiver and sender UIs plus game logic for solo/two-player race mode.
+
+I’m about to edit the receiver and sender files to add mode selection, two-player matchmaking with synchronized start, and a shared level-3 race winner flow while preserving the existing solo three-level game.
+
+I’ve implemented the receiver-side mode logic and race hooks; now I’m updating the controller so two-player uses a ready state and only starts rotation when both players are ready and the race starts.
+
+I finished the core edits and validated there are no static errors in changed files. I’ll do a quick diff review next to confirm the flow and then summarize exactly how to use the new solo vs two-player experience.
+
+Implemented end-to-end: solo mode stays as your current 3-level flow, and two-player mode now runs a synchronized level-3 race where first to finish wins.
+
+What changed
+
+Receiver now starts with a mode choice
+Added Play Solo and Play With Two buttons on the main page.
+Files:
+index.html
+style.css
+Solo mode behavior preserved
+Solo still uses one sender, QR flow, Start/Restart from phone, and the existing 3-level progression.
+File:
+connection.js
+Two-player lobby + matchmaking
+In two-player mode:
+QR stays visible until 2 players connect.
+Each phone gets assigned Player 1 or Player 2.
+Both players must press Ready before race starts.
+If someone disconnects, lobby resets and waits again.
+File:
+connection.js
+Race mode on fixed level 3 maze
+Added race game mode in maze engine:
+Shared level-3 difficulty maze
+Two player markers and trails
+First player to reach finish is declared winner
+Race result shown in overlay
+File:
+maze.js
+Sender/controller updated for solo vs duo
+Sender now reads mode from QR URL.
+Solo button remains Start/Restart.
+Duo button becomes Ready:
+Press once -> ready state
+Race starts only after both ready (triggered by receiver)
+Direction rotation countdown still runs during race
+Winner/loser status shown on each phone after finish
+File:
+sender.js
+Notes
+
+Rotation/direction switching is still active in two-player mode, now tied to actual race start for fair sync.
+I validated changed files for editor errors; none found.
+I could not run the server startup check because the run command was skipped in this session.
+Quick usage flow now
+
+Open receiver page.
+Choose Play Solo or Play With Two.
+Scan QR from phone(s).
+Solo:
+Press Start/Restart on phone to run 3 levels.
+Two-player:
+Wait until both phones connected.
+Both press Ready.
+Race starts on level 3.
+First to finish wins; both can press Ready again for rematch.
+If you want, I can also add a visible countdown (3-2-1) before the two-player race starts so both players begin at exactly the same moment.
+
+Dan heb ik aan ai gevraagd om het een beetje beter en duidelijker samen te vatten omdat ik het gevoel had dat ik de rest te oppervlakkig uitlegde.
+
+promt:
+```javascript
+Wil je de readme file verbeteren en in meer detail uitleggen wat je gedaan hebt en wat alles doet. Kan je wel ook kijken naar hoe ik de rest schreef en mijn tone of voice aanhouden zodat het lijkt of ik het geschreven heb?
+```
+
+output:
+
+Wat ik hiermee heb gedaan:
+
+Ik heb een extra spelmodus toegevoegd waarbij je op het begin kiest tussen alleen spelen of met 2 spelen. Het bestaande spel (3 levels na elkaar met tijd) blijft gewoon bestaan voor solo. De nieuwe 2-player mode gebruikt dezelfde WebRTC setup, maar met een lobby-logica zodat beide spelers eerst moeten connecteren en ready moeten zetten.
+
+### Wat je nu ziet op de receiver (index)
+
+- Er staat eerst een mode-keuze op het scherm:
+    - Play Solo
+    - Play With Two
+- Pas na die keuze wordt de rest van de flow actief.
+
+Als je Solo kiest:
+- werkt alles zoals ervoor
+- 1 sender connecteert via QR
+- Start/Restart op gsm start een nieuwe ronde met 3 levels
+
+Als je Play With Two kiest:
+- QR blijft zichtbaar tot er effectief 2 spelers verbonden zijn
+- elke gsm krijgt een player-index (Player 1 en Player 2)
+- beide spelers moeten op Ready drukken
+- pas als beide ready zijn start de race op een level-3 maze
+
+### Welke file wat doet
+
+index.html
+- mode selectie toegevoegd
+- extra statusregels voorzien voor race-info
+
+style.css
+- styling voor mode-keuze en race status
+- tweede knopstijl voor de 2-player knop
+
+connection.js
+- grootste aanpassing
+- split gemaakt tussen solo-flow en duo-flow
+- duo-lobby toegevoegd (max 2 spelers)
+- ready-state van beide spelers beheren
+- race starten alleen als beide connected + ready zijn
+- winner broadcasten naar beide sender-clients
+- reset/logica bij disconnect
+
+maze.js
+- naast solo nu ook race-mode
+- startRaceMaze() toegevoegd zodat direct een level-3 maze gemaakt wordt
+- moveRacePlayer(playerIndex, direction) toegevoegd
+- 2 spelers tegelijk tekenen op hetzelfde canvas (elk eigen kleur/trail)
+- eerste speler die finish raakt wint en triggert race-finished overlay
+
+sender.js
+- mode uitlezen via query param uit QR-link
+- knopgedrag verschillend gemaakt:
+    - solo: Start/Restart
+    - duo: Ready
+- in duo pas starten met rotatiecountdown wanneer receiver raceStart stuurt
+- statusmeldingen voor assigned player, ready state, winnaar/verliezer
+
+### Flow in 2-player mode stap voor stap
+
+1. Receiver kiest Play With Two.
+2. QR wordt gescand door 2 gsm's.
+3. Beide peers verbinden met receiver (datachannel).
+4. Beide spelers drukken Ready.
+5. Receiver start exact 1 gedeelde race (level 3).
+6. Beide sturen tilt-moves door zoals normaal.
+7. Eerste die finish raakt wint.
+8. Beide kunnen daarna opnieuw Ready drukken voor een rematch.
+
+### Richtingen draaien (belangrijk)
+
+De direction-rotation blijft ook in 2-player actief. Ik heb dit niet weggehaald, enkel beter getimed:
+- in solo start rotatie wanneer je Start drukt
+- in duo start rotatie pas wanneer de race echt begint
+
+Zo voorkom je dat iemand al richtingwissels krijgt terwijl de andere nog niet ready is.
+
+### Probleem dat ik nadien nog tegenkwam
+
+Ik kreeg deze warning:
+
+installHook.js:1 Duo peer timed out before connect: ...
+
+Wat dit betekent:
+- signaling kwam wel binnen (dus QR + socket werkte)
+- maar de WebRTC connect ging niet volledig naar connected binnen de timeout
+
+Wat ik aangepast heb:
+- connected tellen op echte connected peers, niet op aangemaakte peer objecten
+- timeout verhoogd van 15s naar 30s
+- stale peers bij error/timeout correct opruimen
+- duidelijkere status op receiver zodat je weet dat opnieuw scannen nodig is
+
+Daardoor blijft de lobby minder snel vastzitten op "half-connected" pogingen.
+
+### Samengevat
+
+Wat ik al had, wordt nu pas getriggerd nadat je bewust een mode kiest en op de juiste knop drukt. Solo is hetzelfde gebleven qua gameplay. Voor 2 spelers wacht het systeem nu echt op 2 connecties + 2x ready, en dan start 1 gedeelde level-3 race waarin de eerste aan de finish wint.
+
+
+---
+Dus ik had waarschijnlijk eerst weer een wifi probleem waardoor de connectie niet zo goed ging. Dit had ik dan gevraagd aan wat het zou kunnen liggen dat het niet verbond en hij stond nog op agent dus had hij al weer dingen aangepast.
+
+Omdat ik ook niet meer zeker was omdat dit belangrijk was heb ik aan ai gevraagd om alles ervan samen te vatten.
+
+Zelf weet ik wel dat nu mijn originele code achter de knop zit om solo te spelen. Dan is er een nieuwe code gemaakt die veel hergebruikt van de originele waarbij alleen level 3 gebruikt wordt en de start knop moet nu 2 conformaties ontvangen voor hij start. De qr-code wordt ook nog op die manier verborgen maar wordt nu ook pas getoont wannneer je een keuze hebt gemaakt van solo of met 2.
+
+Bij de race mode (met 2) wordt er wanneer en 1 iemand finished het spel stop gezet zoals er bij de solo mode een scherm komt en het stop zet.
